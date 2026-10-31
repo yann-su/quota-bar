@@ -18,7 +18,9 @@ final class WidgetPublisher {
     private var lastReload = Date.distantPast
     private var lastDay: Date?
     func publish(report: TokenReport, quotas: [UsageSnapshot], forceReload: Bool = false) -> Bool {
-        guard let directory = WidgetSharedContainer.directory else { return false }
+        // Do not keep asking WidgetKit to reload an extension that the system
+        // cannot authorize. The in-process desktop panel remains independent.
+        guard Self.hasSigningTeam, let directory = WidgetSharedContainer.directory else { return false }
         let snapshot = WidgetSnapshot(report: report, quotas: quotas)
         do { try WidgetSnapshotFile.write(snapshot, directory: directory) }
         catch { return false }

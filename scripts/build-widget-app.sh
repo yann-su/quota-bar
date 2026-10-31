@@ -9,6 +9,11 @@ trap 'rm -rf "$STAGING_DIR"' EXIT
 DERIVED_DATA="${QUOTABAR_DERIVED_DATA:-${TMPDIR:-/tmp}/quotabar-widget-derived}"
 SIGN_IDENTITY="${QUOTABAR_SIGN_IDENTITY:--}"
 APP_GROUP="${QUOTABAR_APP_GROUP:-group.dev.quotabar.shared}"
+if [[ "$SIGN_IDENTITY" == "-" && "${QUOTABAR_ALLOW_UNSIGNED_WIDGET:-0}" != "1" ]]; then
+    echo 'Native WidgetKit requires an Apple signing team. For the usable desktop panel, run: bash scripts/build-app.sh' >&2
+    echo 'To explicitly compile an unsigned layout preview only, set QUOTABAR_ALLOW_UNSIGNED_WIDGET=1.' >&2
+    exit 2
+fi
 if [[ "$SIGN_IDENTITY" != "-" && -z "${QUOTABAR_APP_GROUP:-}" ]]; then
     echo 'Set QUOTABAR_APP_GROUP to your actual TEAM_ID.dev.quotabar.shared for macOS signing.' >&2
     exit 1

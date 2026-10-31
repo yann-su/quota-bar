@@ -19,8 +19,24 @@ codesign --force --sign - "$APP"
 codesign --verify --deep --strict "$APP"
 # Stage outside synced folders so File Provider metadata cannot affect signing.
 mkdir -p "$PROJECT_DIR/dist"
-ditto --norsrc "$APP" "$PROJECT_DIR/dist/QuotaBar.app"
+APP_OUTPUT="${QUOTABAR_APP_OUTPUT:-$PROJECT_DIR/dist/QuotaBar.app}"
+if [[ "$APP_OUTPUT" != *.app ]]; then echo 'APP_OUTPUT must end in .app' >&2; exit 1; fi
+mkdir -p "$(dirname "$APP_OUTPUT")"
+PREVIOUS_APP="$STAGING_DIR/previous-QuotaBar.app"
+if [[ -e "$APP_OUTPUT" ]]; then
+    EXISTING_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_OUTPUT/Contents/Info.plist" 2>/dev/null || true)"
+    if [[ "$EXISTING_ID" != "dev.quotabar.mac" ]]; then echo 'Refusing to replace a different application.' >&2; exit 1; fi
+    mv "$APP_OUTPUT" "$PREVIOUS_APP"
+fi
+# Copy into a fresh bundle so a previous WidgetKit PlugIns directory is not
+# retained by ditto's merge behavior. Restore the previous app on copy failure.
+if ! ditto --norsrc "$APP" "$APP_OUTPUT"; then
+    rm -rf "$APP_OUTPUT"
+    if [[ -d "$PREVIOUS_APP" ]]; then mv "$PREVIOUS_APP" "$APP_OUTPUT"; fi
+    exit 1
+fi
+codesign --verify --deep --strict "$APP_OUTPUT"
 ARCHIVE="$PROJECT_DIR/dist/QuotaBar-macOS-$(uname -m).zip"
 ditto -c -k --norsrc --keepParent "$APP" "$ARCHIVE"
-echo "Built: $PROJECT_DIR/dist/QuotaBar.app"
+echo "Built: $APP_OUTPUT"
 echo "Archive: $ARCHIVE"

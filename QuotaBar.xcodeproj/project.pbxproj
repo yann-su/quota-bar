@@ -21,6 +21,7 @@
 		6E9975AE8A1BAE3FCB9C1371 /* QuotaBarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DDDC296625F2B3FB996B43 /* QuotaBarWidget.swift */; };
 		75C60993A8E03D24BCB62124 /* Usage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62743CD95409A46538E88B6A /* Usage.swift */; };
 		7C848E4EA179831847A392E7 /* TokenTrend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC53B9F5CBE98D8DFAB2850C /* TokenTrend.swift */; };
+		80838ED29F835EEE5553D51F /* DesktopWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = E224BBEF9283DF78287D2471 /* DesktopWidget.swift */; };
 		907EFA0E7DE19D66750F939D /* TokenLogReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */; };
 		9471AC18898C33BC449B22E1 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AB3C320BE59FBC33517DAB /* App.swift */; };
 		9B4549C5FB84A5E9672F057A /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
@@ -100,6 +101,7 @@
 		D2FF2BC8BF5C72FE5E25D27C /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenPricing.swift; sourceTree = "<group>"; };
 		E138A76EE03F9746E232875A /* QuotaBarWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuotaBarWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E224BBEF9283DF78287D2471 /* DesktopWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +206,7 @@
 			children = (
 				65AB3C320BE59FBC33517DAB /* App.swift */,
 				47AC34132AC97AAE5867E838 /* DashboardView.swift */,
+				E224BBEF9283DF78287D2471 /* DesktopWidget.swift */,
 				93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */,
 				A91EF472A508D8ED0365DCA5 /* PanelHostingView.swift */,
 				3AFCF7DB3383B67430BF7CD3 /* PanelLayout.swift */,
@@ -347,6 +350,7 @@
 			files = (
 				9471AC18898C33BC449B22E1 /* App.swift in Sources */,
 				31E1AE8E44C02404A4679D3D /* DashboardView.swift in Sources */,
+				80838ED29F835EEE5553D51F /* DesktopWidget.swift in Sources */,
 				2D94A7EDCAC7A3D193847EA2 /* LocalTokenSources.swift in Sources */,
 				E8D4A546C318083675B1FD86 /* PanelHostingView.swift in Sources */,
 				A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */,

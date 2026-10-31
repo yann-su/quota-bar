@@ -128,13 +128,22 @@ struct DashboardView: View {
             }
             Divider()
             VStack(alignment: .leading, spacing: 8) {
-                Text("桌面小组件").font(.system(size: 12, weight: .semibold))
-                Text("右键桌面 → 编辑小组件 → 搜索 QuotaBar。右键组件可切换统计范围，也可开启输入／输出数量与费用。")
+                Text("桌面浮窗").font(.system(size: 12, weight: .semibold))
+                Toggle("显示桌面浮窗", isOn: $store.desktopWidgetEnabled)
+                Toggle("保持置顶", isOn: $store.desktopWidgetPinned)
+                Toggle("中号趋势布局", isOn: $store.desktopWidgetMedium)
+                Toggle("显示输入／输出", isOn: $store.desktopWidgetShowsIO)
+                Text("直接使用主应用统计，无需开发者证书。拖动空白处调整位置；浮窗右上角菜单可切换范围、布局或隐藏。")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            Divider()
+            VStack(alignment: .leading, spacing: 8) {
+                Text("系统原生小组件（需签名）").font(.system(size: 12, weight: .semibold))
                 Text(store.widgetStatus ?? "正在准备统计摘要…")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
-                Button("同步统计摘要") { store.publishWidget(forceReload: true) }.disabled(store.isDemo || store.tokenReport == nil)
-                Text("保持 QuotaBar 在菜单栏运行以更新统计。小组件仅显示本机记录，系统可能延后刷新。")
+                Button("同步原生组件摘要") { store.publishWidget(forceReload: true) }
+                    .disabled(store.isDemo || store.tokenReport == nil || !WidgetPublisher.hasSigningTeam)
+                Text("仅签名构建使用系统“编辑小组件”。本地浮窗版无需此步骤。")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
             }
             Divider()
@@ -149,7 +158,7 @@ struct DashboardView: View {
                 }
             }
             if let message = store.settingsMessage { Text(message).font(.caption).foregroundStyle(.orange) }
-            Text("QuotaBar 0.7.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
+            Text("QuotaBar 0.8.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

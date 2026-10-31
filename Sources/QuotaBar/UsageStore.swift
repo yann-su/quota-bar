@@ -26,6 +26,12 @@ final class UsageStore: ObservableObject {
     @Published var tokenReport: TokenReport?
     @Published var tokensRefreshing = false
     @Published var widgetStatus: String?
+    @Published private(set) var widgetSnapshot: WidgetSnapshot?
+    @Published var desktopWidgetEnabled: Bool { didSet { defaults.set(desktopWidgetEnabled, forKey: "desktopWidgetEnabled") } }
+    @Published var desktopWidgetPinned: Bool { didSet { defaults.set(desktopWidgetPinned, forKey: "desktopWidgetPinned") } }
+    @Published var desktopWidgetMedium: Bool { didSet { defaults.set(desktopWidgetMedium, forKey: "desktopWidgetMedium") } }
+    @Published var desktopWidgetShowsIO: Bool { didSet { defaults.set(desktopWidgetShowsIO, forKey: "desktopWidgetShowsIO") } }
+    @Published var desktopWidgetPeriod: WidgetPeriod { didSet { defaults.set(desktopWidgetPeriod.rawValue, forKey: "desktopWidgetPeriod") } }
     @Published var selectedTokenPeriod: TokenPeriod = .sevenDays
     @Published var widgetOpenRequest = UUID()
     @Published var refreshMinutes: Int { didSet { defaults.set(refreshMinutes, forKey: "refreshMinutes") } }
@@ -53,9 +59,14 @@ final class UsageStore: ObservableObject {
         claudeEnabled = defaults.bool(forKey: "claudeEnabled")
         codexPath = defaults.string(forKey: "codexPath") ?? ""
         showPercentInMenu = defaults.object(forKey: "showPercentInMenu") as? Bool ?? true
+        desktopWidgetEnabled = defaults.object(forKey: "desktopWidgetEnabled") as? Bool ?? true
+        desktopWidgetPinned = defaults.object(forKey: "desktopWidgetPinned") as? Bool ?? true
+        desktopWidgetMedium = defaults.object(forKey: "desktopWidgetMedium") as? Bool ?? false
+        desktopWidgetShowsIO = defaults.object(forKey: "desktopWidgetShowsIO") as? Bool ?? true
+        desktopWidgetPeriod = WidgetPeriod(rawValue: defaults.string(forKey: "desktopWidgetPeriod") ?? "") ?? .sevenDays
         storageURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("QuotaBar/usage-history.json")
-        if demo { seedDemo() }
+        if demo { seedDemo(); publishWidget() }
         else {
             if let data = try? Data(contentsOf: storageURL), let saved = try? JSONDecoder().decode(SnapshotArchive.self, from: data) {
                 archive = saved
@@ -105,9 +116,17 @@ final class UsageStore: ObservableObject {
         }
     }
     func publishWidget(forceReload: Bool = false) {
-        guard !isDemo, let report = tokenReport else { return }
+        guard let report = tokenReport else { return }
         let quotas = Provider.allCases.compactMap { provider -> UsageSnapshot? in
             guard !isStale(provider) else { return nil }; return state(provider).snapshot
+        }
+        // The desktop panel consumes this value directly in this process.
+        // It never depends on extension signing or shared-container access.
+        widgetSnapshot = WidgetSnapshot(report: report, quotas: quotas)
+        guard !isDemo else { return }
+        guard WidgetPublisher.hasSigningTeam else {
+            widgetStatus = "系统原生组件需要开发者签名；桌面浮窗可直接使用。"
+            return
         }
         let published = widgetPublisher.publish(report: report, quotas: quotas, forceReload: forceReload)
         if !published { widgetStatus = "桌面小组件需使用包含扩展和 App Group 的构建。" }
