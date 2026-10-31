@@ -76,10 +76,11 @@ enum QuotaBarMain {
             } catch { print("Codex: \(error.localizedDescription)"); exit(1) }
             return
         }
-        if CommandLine.arguments.contains("--check-claude") {
+        if CommandLine.arguments.contains("--check-claude") || CommandLine.arguments.contains("--diagnose-claude") {
             Task {
                 do {
-                    let snapshot = try await ClaudeClient.fetch(allowPrompt: false)
+                    let trace: ((String) -> Void)? = CommandLine.arguments.contains("--diagnose-claude") ? { print($0) } : nil
+                    let snapshot = try await ClaudeClient.fetch(allowPrompt: false, diagnostics: trace)
                     print("Claude: connected; \(snapshot.windows.count) quota windows; credentials not logged.")
                     for window in snapshot.windows { print("\(window.title): \(Int(window.usedPercent))% used") }
                     exit(0)

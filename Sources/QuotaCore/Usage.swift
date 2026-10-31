@@ -58,7 +58,7 @@ public enum UsageError: Error, LocalizedError, Equatable {
         case .keychainDenied: return "未能读取 Claude 登录凭据。请点击连接并允许钥匙串访问。"
         case .expiredCredential: return "Claude 登录需要更新。点击「修复 Claude 登录」让官方客户端续期，再回到这里刷新。"
         case .missingCredential: return "未找到 Claude Code 订阅登录。请先运行 claude 并登录。"
-        case .invalidResponse: return "额度数据格式已变化，暂时无法读取。"
+        case .invalidResponse: return "暂时无法解析额度响应，请刷新或更新 QuotaBar。"
         case .timeout: return "读取超时，请稍后刷新。"
         case .serviceUnavailable: return "服务暂时不可用，请检查网络后重试。"
         case .unsupportedAccount: return "当前账号未返回订阅额度；API key 账号不支持此视图。"
@@ -116,7 +116,8 @@ public enum UsageDecoder {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw UsageError.invalidResponse }
         var windows: [QuotaWindow] = []
         let preferred = ["five_hour", "seven_day"]
-        let keys = preferred + object.keys.filter { $0.hasPrefix("seven_day_") }.sorted()
+        // Breakdown is aggregate metadata, not an additional quota window.
+        let keys = preferred + object.keys.filter { $0.hasPrefix("seven_day_") && $0 != "seven_day_breakdown" }.sorted()
         for key in keys {
             guard let value = object[key], !(value is NSNull) else { continue }
             guard JSONSerialization.isValidJSONObject(value), let encoded = try? JSONSerialization.data(withJSONObject: value),

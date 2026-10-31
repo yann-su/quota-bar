@@ -44,6 +44,14 @@ final class UsageTests: XCTestCase {
         XCTAssertNil(snapshot.windows[2].resetsAt)
     }
 
+    func testClaudeBreakdownMetadataDoesNotInvalidateRealQuotaWindows() throws {
+        let json = #"{"five_hour":{"utilization":1,"resets_at":"2027-01-15T09:00:00Z"},"seven_day":{"utilization":12,"resets_at":"2027-01-17T08:00:00Z"},"seven_day_breakdown":{"by_product":{"claude_code":{}},"total":{}},"seven_day_opus":null,"seven_day_oauth_apps":null}"#
+        let snapshot = try UsageDecoder.claude(Data(json.utf8), now: now)
+        XCTAssertEqual(snapshot.windows.map(\.id), ["five_hour", "seven_day"])
+        XCTAssertEqual(snapshot.windows.map(\.usedPercent), [1, 12])
+        XCTAssertEqual(snapshot.availablePercent(at: now, maxAge: 600), 88)
+    }
+
     func testExpiredWindowCannotAdvertiseRemainingQuota() {
         let window = QuotaWindow(id: "a", title: "5 小时", usedPercent: 25, resetsAt: now.addingTimeInterval(60))
         let snapshot = UsageSnapshot(provider: .codex, fetchedAt: now, windows: [window], source: "test")

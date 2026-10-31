@@ -3,6 +3,14 @@ import QuotaCore
 @testable import QuotaBar
 
 final class ConnectionTests: XCTestCase {
+    func testClaudeDiagnosticsOnlyLogResponseShape() {
+        let json = #"{"accessToken":"PRIVATE-TOKEN","five_hour":{"utilization":21,"resets_at":"2027-01-15T08:00:00Z","account":"PRIVATE-ACCOUNT"},"seven_day_breakdown":{"private":"PRIVATE-METADATA"}}"#
+        let result = ClaudeClient.responseShape(Data(json.utf8))
+        XCTAssertTrue(result.contains("five_hour: utilization=number valid=true"))
+        XCTAssertTrue(result.contains("aggregate metadata; not a quota window"))
+        XCTAssertFalse(result.contains("PRIVATE"))
+        XCTAssertFalse(result.contains("2027-01-15"))
+    }
     func testLocalExpiryMetadataDoesNotPreventServerValidation() throws {
         let credential = try ClaudeCredential.decode(Data(#"{"claudeAiOauth":{"accessToken":"test-placeholder","expiresAt":1000000000000}}"#.utf8))
         XCTAssertEqual(credential.accessToken, "test-placeholder")

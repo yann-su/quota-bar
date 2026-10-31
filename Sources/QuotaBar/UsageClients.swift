@@ -144,7 +144,7 @@ final class NoRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sen
 }
 
 enum ClaudeClient {
-    static func fetch(allowPrompt: Bool) async throws -> UsageSnapshot {
+    static func fetch(allowPrompt: Bool, diagnostics: ((String) -> Void)? = nil) async throws -> UsageSnapshot {
         let credential = try await Task.detached { try ClaudeCredential.read(allowPrompt: allowPrompt) }.value
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 20
@@ -164,6 +164,10 @@ enum ClaudeClient {
         catch let error as URLError where error.code == .timedOut { throw UsageError.timeout }
         catch { throw UsageError.serviceUnavailable }
         guard let http = response as? HTTPURLResponse else { throw UsageError.invalidResponse }
+        if let diagnostics {
+            diagnostics("Claude HTTP \(http.statusCode); content-type=\(http.mimeType ?? "unknown"); bytes=\(data.count)")
+            diagnostics(responseShape(data))
+        }
         switch http.statusCode {
         case 200: return try UsageDecoder.claude(data)
         case 401: throw UsageError.expiredCredential
@@ -171,5 +175,29 @@ enum ClaudeClient {
         case 429: throw UsageError.rateLimited(UsageDecoder.retryDate(http.value(forHTTPHeaderField: "Retry-After")))
         default: throw UsageError.serviceUnavailable
         }
+    }
+
+    /// Only field names and validation results; never print credentials, body
+    /// text, account identifiers, credit amounts, or raw timestamps.
+    static func responseShape(_ data: Data) -> String {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return "Response is not a JSON object." }
+        func kind(_ value: Any?) -> String {
+            guard let value else { return "missing" }
+            if value is NSNull { return "null" }
+            if value is String { return "string" }
+            if value is NSNumber { return "number" }
+            if value is [String: Any] { return "object" }
+            if value is [Any] { return "array" }
+            return "other"
+        }
+        let keys = root.keys.filter { $0 == "five_hour" || $0.hasPrefix("seven_day") }.sorted()
+        return keys.map { key in
+            if key == "seven_day_breakdown" { return "seven_day_breakdown: aggregate metadata; not a quota window" }
+            guard let window = root[key] as? [String: Any] else { return "\(key): \(kind(root[key]))" }
+            let value = window["utilization"] as? NSNumber
+            let valid = value.map { $0.doubleValue.isFinite && (0...100).contains($0.doubleValue) } ?? false
+            let date = window["resets_at"] as? String
+            return "\(key): utilization=\(kind(window["utilization"])) valid=\(valid); resets_at=\(kind(window["resets_at"])) parseable=\(date.flatMap(UsageDecoder.parseDate) != nil)"
+        }.joined(separator: "\n")
     }
 }
