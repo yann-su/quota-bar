@@ -97,7 +97,7 @@ struct WidgetLargeContentView: View {
             directionRow(.input, split: split, cost: cost)
             directionRow(.output, split: split, cost: cost)
             Divider().opacity(0.4)
-            QuotaProgressView(progress: item?.quota, date: date, compact: !wide)
+            QuotaWindowsView(provider: provider, progresses: item?.quotaWindows ?? [], date: date, compact: true)
             if wide { Spacer(minLength: 0) }
         }
         .padding(wide ? 12 : 10)

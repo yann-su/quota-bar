@@ -286,7 +286,7 @@ private struct WidgetPreviewView: View {
     var showsInputOutput: Bool
     private var snapshot: WidgetSnapshot? {
         guard let report = store.tokenReport else { return nil }
-        let quotas = Provider.allCases.compactMap { store.isStale($0) ? nil : store.state($0).snapshot }
+        let quotas = Provider.allCases.compactMap { store.quotaSnapshotForDisplay($0) }
         return WidgetSnapshot(report: report, quotas: quotas, now: store.now)
     }
     @ViewBuilder

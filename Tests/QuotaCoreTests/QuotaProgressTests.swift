@@ -53,4 +53,41 @@ final class QuotaProgressTests: XCTestCase {
         var invalidWindow = usage(); invalidWindow.windows[0].usedPercent = .nan
         XCTAssertNil(QuotaProgress(snapshot: invalidWindow, now: now))
     }
+    func testPrimaryWindowsKeepWeeklyVisibleWhenFiveHourIsMoreRestricted() {
+        let snapshot = UsageSnapshot(provider: .claude, fetchedAt: now, windows: [
+            QuotaWindow(id: "seven_day", title: "每周 · 全部模型", usedPercent: 10, resetsAt: now.addingTimeInterval(5000)),
+            QuotaWindow(id: "five_hour", title: "5 小时", usedPercent: 71, resetsAt: now.addingTimeInterval(600)),
+            QuotaWindow(id: "seven_day_sonnet", title: "每周 · Sonnet", usedPercent: 99, resetsAt: now.addingTimeInterval(5000))
+        ], source: "test")
+        let windows = QuotaProgress.primaryWindows(snapshot: snapshot, now: now)
+        XCTAssertEqual(windows.map(\.windowID), ["five_hour", "seven_day"])
+        XCTAssertEqual(windows.map(\.usedPercent), [71, 10])
+        let widget = WidgetSnapshot(report: TokenReport(), quotas: [snapshot], now: now)
+        XCTAssertEqual(widget.providers[0].quotaWindows, windows)
+    }
+    func testShortWindowExpiryDoesNotHideCurrentWeeklyWindow() {
+        let snapshot = UsageSnapshot(provider: .claude, fetchedAt: now, windows: [
+            QuotaWindow(id: "five_hour", title: "5 小时", usedPercent: 80, resetsAt: now.addingTimeInterval(30)),
+            QuotaWindow(id: "seven_day", title: "每周", usedPercent: 10, resetsAt: now.addingTimeInterval(5000))
+        ], source: "test")
+        let windows = QuotaProgress.primaryWindows(snapshot: snapshot, now: now.addingTimeInterval(31))
+        XCTAssertEqual(windows.map(\.windowID), ["seven_day"])
+        XCTAssertEqual(windows.first?.remainingPercent, 90)
+    }
+    func testMissingGlobalWeeklyQuotaIsNotReplacedByModelQuota() {
+        var snapshot = usage(71)
+        snapshot.provider = .claude
+        snapshot.windows.append(QuotaWindow(id: "seven_day_opus", title: "每周 · Opus", usedPercent: 10, resetsAt: nil))
+        XCTAssertEqual(QuotaProgress.primaryWindows(snapshot: snapshot, now: now).map(\.windowID), ["five_hour"])
+        XCTAssertTrue(QuotaProgress.primaryWindows(snapshot: snapshot, now: now.addingTimeInterval(901)).isEmpty)
+    }
+    func testCodexUsesOnlyReportedBaseWindows() {
+        let snapshot = UsageSnapshot(provider: .codex, fetchedAt: now, windows: [
+            QuotaWindow(id: "review.primary", title: "Code review", usedPercent: 95, resetsAt: nil),
+            QuotaWindow(id: "codex.primary", title: "每周", usedPercent: 16, resetsAt: nil)
+        ], source: "test")
+        let windows = QuotaProgress.primaryWindows(snapshot: snapshot, now: now)
+        XCTAssertEqual(windows.map(\.windowID), ["codex.primary"])
+        XCTAssertEqual(windows.first?.shortTitle, "每周")
+    }
 }

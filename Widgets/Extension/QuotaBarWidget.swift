@@ -30,7 +30,7 @@ struct UsageWidgetProvider: TimelineProvider {
             let midnight = Calendar.current.nextDate(after: now, matching: DateComponents(hour: 0), matchingPolicy: .nextTime)!
             var entries = [entry(now)]
             let expiries = (result.snapshot.map { [$0.generatedAt.addingTimeInterval(20 * 60 + 1)] } ?? [])
-                + (result.snapshot?.providers.compactMap { $0.quota?.validUntil.addingTimeInterval(1) } ?? [])
+                + (result.snapshot?.providers.flatMap { $0.quotaWindows.map { $0.validUntil.addingTimeInterval(1) } } ?? [])
             for expiry in Set(expiries.filter { $0 > now && $0 < midnight }).sorted() {
                 entries.append(entry(expiry))
             }

@@ -30,6 +30,7 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     public var thirtyDays: Int64?
     public var daily: [WidgetDaySample]
     public var quota: QuotaProgress?
+    public var quotaWindows: [QuotaProgress]
     public var partial: Bool
     public var todayCost: TokenCostEstimate?
     public var sevenDaysCost: TokenCostEstimate?
@@ -55,7 +56,7 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
 /// Aggregate usage and quota-window metadata only: no credentials, request IDs,
 /// log model details, file paths or conversation content are included.
 public struct WidgetSnapshot: Codable, Equatable, Sendable {
-    public static let currentVersion = 4
+    public static let currentVersion = 5
     public var version = currentVersion
     public var generatedAt: Date
     public var dayStart: Date
@@ -83,7 +84,8 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
             let quota = quotas.first { $0.provider == provider }
             return WidgetProviderSnapshot(provider: provider, today: total(.today), sevenDays: total(.sevenDays),
                 thirtyDays: total(.thirtyDays), daily: available ? trend.buckets.map { WidgetDaySample(date: $0.start, tokens: $0.counts(for: provider).total) } : [],
-                quota: QuotaProgress(snapshot: quota, now: now), partial: coverage.isPartial,
+                quota: QuotaProgress(snapshot: quota, now: now),
+                quotaWindows: QuotaProgress.primaryWindows(snapshot: quota, now: now), partial: coverage.isPartial,
                 todayCost: cost(.today), sevenDaysCost: cost(.sevenDays), thirtyDaysCost: cost(.thirtyDays),
                 todaySplit: split(.today), sevenDaysSplit: split(.sevenDays), thirtyDaysSplit: split(.thirtyDays))
         }

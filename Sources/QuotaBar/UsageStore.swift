@@ -107,10 +107,14 @@ final class UsageStore: ObservableObject {
     func publishWidget(forceReload: Bool = false) {
         guard !isDemo, let report = tokenReport else { return }
         let quotas = Provider.allCases.compactMap { provider -> UsageSnapshot? in
-            guard !isStale(provider) else { return nil }; return state(provider).snapshot
+            quotaSnapshotForDisplay(provider)
         }
         let published = widgetPublisher.publish(report: report, quotas: quotas, forceReload: forceReload)
         widgetStatus = published ? widgetPublisher.status : "请安装包含原生小组件的版本。"
+    }
+    func quotaSnapshotForDisplay(_ provider: Provider) -> UsageSnapshot? {
+        guard state(provider).error == nil, provider != .claude || claudeEnabled || isDemo else { return nil }
+        return state(provider).snapshot
     }
     func exportTokens() {
         guard let tokenReport else { return }
