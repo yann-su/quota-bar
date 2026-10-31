@@ -136,11 +136,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.delegate = self
         updateContent()
-        let widgetPreview = CommandLine.arguments.contains("--widget-preview-small") || CommandLine.arguments.contains("--widget-preview-medium")
+        let largePreview = CommandLine.arguments.contains("--widget-preview-large") || CommandLine.arguments.contains("--widget-preview-extra-large")
+        let widePreview = CommandLine.arguments.contains("--widget-preview-extra-large")
+        let widgetPreview = largePreview || CommandLine.arguments.contains("--widget-preview-small") || CommandLine.arguments.contains("--widget-preview-medium")
         if widgetPreview {
             let small = CommandLine.arguments.contains("--widget-preview-small")
-            let size = NSSize(width: small ? 170 : 360, height: 170)
-            let view = WidgetPreviewView(store: store, small: small, showsInputOutput: CommandLine.arguments.contains("--widget-preview-io"))
+            let size = largePreview ? NSSize(width: widePreview ? 720 : 344, height: 360) : NSSize(width: small ? 170 : 360, height: 170)
+            let view = WidgetPreviewView(store: store, small: small, large: largePreview, wide: widePreview,
+                                         showsInputOutput: CommandLine.arguments.contains("--widget-preview-io"))
                 .padding(16).frame(width: size.width, height: size.height)
                 .background(Color(nsColor: .windowBackgroundColor)).clipShape(RoundedRectangle(cornerRadius: 20))
             panel.setContentSize(size)
@@ -269,9 +272,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 private struct WidgetPreviewView: View {
     @ObservedObject var store: UsageStore
     var small: Bool
+    var large: Bool
+    var wide: Bool
     var showsInputOutput: Bool
+    @ViewBuilder
     var body: some View {
-        WidgetContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
-            period: .sevenDays, date: store.now, isSmall: small, isPreview: store.isDemo, showsInputOutput: showsInputOutput)
+        if large {
+            WidgetLargeContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
+                                   period: .sevenDays, date: store.now, wide: wide, isPreview: store.isDemo)
+        } else {
+            WidgetContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
+                period: .sevenDays, date: store.now, isSmall: small, isPreview: store.isDemo, showsInputOutput: showsInputOutput)
+        }
     }
 }

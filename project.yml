@@ -36,8 +36,8 @@ targets:
       path: Resources/App-Info.plist
       properties:
         CFBundleDisplayName: QuotaBar
-        CFBundleShortVersionString: "0.9.0"
-        CFBundleVersion: "12"
+        CFBundleShortVersionString: "0.10.0"
+        CFBundleVersion: "13"
         LSUIElement: true
         NSHighResolutionCapable: true
         NSPrincipalClass: NSApplication
@@ -66,8 +66,8 @@ targets:
       path: Resources/Widget-Info.plist
       properties:
         CFBundleDisplayName: QuotaBar
-        CFBundleShortVersionString: "0.9.0"
-        CFBundleVersion: "12"
+        CFBundleShortVersionString: "0.10.0"
+        CFBundleVersion: "13"
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         NSExtension:

@@ -42,8 +42,15 @@ struct UsageWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: UsageWidgetEntry
     var body: some View {
-        WidgetContentView(snapshot: entry.snapshot, period: entry.period, date: entry.date,
-                          isSmall: family == .systemSmall, issue: entry.issue, showsInputOutput: true)
+        Group {
+            if family == .systemLarge || family == .systemExtraLarge {
+                WidgetLargeContentView(snapshot: entry.snapshot, period: entry.period, date: entry.date,
+                                       wide: family == .systemExtraLarge, issue: entry.issue)
+            } else {
+                WidgetContentView(snapshot: entry.snapshot, period: entry.period, date: entry.date,
+                                  isSmall: family == .systemSmall, issue: entry.issue, showsInputOutput: true)
+            }
+        }
             .containerBackground(.background, for: .widget)
             .widgetURL(URL(string: "quotabar://open?period=\(entry.period.rawValue)"))
     }
@@ -52,8 +59,8 @@ struct UsageWidgetView: View {
 @MainActor
 private func configuration(kind: String, period: WidgetPeriod) -> some WidgetConfiguration {
     StaticConfiguration(kind: kind, provider: UsageWidgetProvider(period: period)) { entry in UsageWidgetView(entry: entry) }
-        .description("本机 Token 输入、输出与 API 参考美元费用。中号附带近 7 天趋势。保持 QuotaBar 运行以同步。")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .description("本机 Token、输入／输出与美元参考费用。中号、大号及超大号显示近 7 天趋势。保持 QuotaBar 运行以同步。")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
 }
 
 struct SevenDaysWidget: Widget {
