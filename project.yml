@@ -1,0 +1,100 @@
+name: QuotaBar
+options:
+  bundleIdPrefix: dev.quotabar
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    QUOTABAR_APP_GROUP: group.dev.quotabar.shared
+    ENABLE_HARDENED_RUNTIME: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  QuotaCore:
+    type: framework
+    platform: macOS
+    sources: [Sources/QuotaCore]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.quotabar.core
+        MACH_O_TYPE: staticlib
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+  QuotaBar:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/QuotaBar
+      - Widgets/Shared
+      - path: Resources/RepairClaude.command
+        buildPhase: resources
+    info:
+      path: Resources/App-Info.plist
+      properties:
+        CFBundleDisplayName: QuotaBar
+        CFBundleShortVersionString: "0.5.0"
+        CFBundleVersion: "8"
+        LSUIElement: true
+        NSHighResolutionCapable: true
+        NSPrincipalClass: NSApplication
+        QuotaBarAppGroup: $(QUOTABAR_APP_GROUP)
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.quotabar.open
+            CFBundleURLSchemes: [quotabar]
+    entitlements:
+      path: Resources/Signing/QuotaBar.entitlements
+      properties:
+        com.apple.security.application-groups: [$(QUOTABAR_APP_GROUP)]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.quotabar.mac
+        PRODUCT_NAME: QuotaBar
+        LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/../Frameworks
+    dependencies:
+      - target: QuotaCore
+        embed: false
+      - target: QuotaBarWidgets
+        embed: true
+  QuotaBarWidgets:
+    type: app-extension
+    platform: macOS
+    sources:
+      - Widgets/Extension
+      - Widgets/Shared
+    info:
+      path: Resources/Widget-Info.plist
+      properties:
+        CFBundleDisplayName: QuotaBar
+        CFBundleShortVersionString: "0.5.0"
+        CFBundleVersion: "8"
+        QuotaBarAppGroup: $(QUOTABAR_APP_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Resources/Signing/QuotaBarWidgets.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups: [$(QUOTABAR_APP_GROUP)]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.quotabar.mac.widgets
+        PRODUCT_NAME: QuotaBarWidgets
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+    dependencies:
+      - target: QuotaCore
+        embed: false
+schemes:
+  QuotaBar:
+    build:
+      targets:
+        QuotaBar: all
+    run:
+      config: Debug
+    archive:
+      config: Release

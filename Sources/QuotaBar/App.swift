@@ -35,6 +35,17 @@ enum QuotaBarMain {
             }
             dispatchMain()
         }
+        if CommandLine.arguments.contains("--check-widget") {
+            Task { @MainActor in
+                let report = await LocalTokenScanner(roots: LocalTokenSources.roots).scan()
+                let published = WidgetPublisher().publish(report: report, quotas: []) && WidgetSharedContainer.read() != nil
+                print("Host widget summary: \(published ? "written and read back" : "unavailable; check App Group and signing")")
+                print("This checks host access only. Verify extension access in WidgetKit Simulator or on the desktop.")
+                print("Payload: aggregate token counts and dates only; no credentials or conversations.")
+                exit(published ? 0 : 1)
+            }
+            dispatchMain()
+        }
         if CommandLine.arguments.contains("--check-codex") {
             do {
                 guard let executable = ExecutableLocator.codex(customPath: "") else { throw UsageError.missingCLI }
@@ -104,6 +115,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.delegate = self
         updateContent()
+        let widgetPreview = CommandLine.arguments.contains("--widget-preview-small") || CommandLine.arguments.contains("--widget-preview-medium")
+        if widgetPreview {
+            let small = CommandLine.arguments.contains("--widget-preview-small")
+            let size = NSSize(width: small ? 170 : 360, height: 170)
+            let view = WidgetPreviewView(store: store, small: small)
+                .padding(16).frame(width: size.width, height: size.height)
+                .background(Color(nsColor: .windowBackgroundColor)).clipShape(RoundedRectangle(cornerRadius: 20))
+            panel.setContentSize(size)
+            panel.contentView = NSHostingView(rootView: view)
+        }
         cancellable = store.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async { self?.statusItem.button?.title = self?.store.menuText ?? "" }
         }
@@ -140,6 +161,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             guard let self else { return }; self.pinned.toggle(); self.updateContent()
         }.clipShape(RoundedRectangle(cornerRadius: 18))
         panel.contentView = PanelHostingView(rootView: view)
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let url = urls.first(where: { $0.scheme == "quotabar" && $0.host == "open" }) else { return }
+        let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "period" }?.value
+        if let value, let period = WidgetPeriod(rawValue: value) { store.selectedTokenPeriod = period.tokenPeriod }
+        store.widgetOpenRequest = UUID()
+        showPanel()
+        store.refreshTokens(force: true)
     }
 
     @objc private func togglePanel() {
@@ -212,5 +242,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         if let localMonitor { NSEvent.removeMonitor(localMonitor) }
         if let globalMonitor { NSEvent.removeMonitor(globalMonitor) }
+    }
+}
+
+private struct WidgetPreviewView: View {
+    @ObservedObject var store: UsageStore
+    var small: Bool
+    var body: some View {
+        WidgetContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
+            period: .sevenDays, date: store.now, isSmall: small, isPreview: store.isDemo)
     }
 }

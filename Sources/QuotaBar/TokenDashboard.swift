@@ -3,11 +3,11 @@ import QuotaCore
 
 struct TokenDashboard: View {
     @ObservedObject var store: UsageStore
-    @State private var period: TokenPeriod = .sevenDays
+    private var period: TokenPeriod { store.selectedTokenPeriod }
     @State private var showingTrends = CommandLine.arguments.contains("--show-trends")
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("统计时间", selection: $period) {
+            Picker("统计时间", selection: $store.selectedTokenPeriod) {
                 ForEach(TokenPeriod.allCases) { period in Text(period.title).tag(period) }
             }.pickerStyle(.segmented).controlSize(.small).labelsHidden()
             HStack {

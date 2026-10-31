@@ -52,6 +52,7 @@ struct DashboardView: View {
         }
         .frame(width: PanelLayout.width, height: PanelLayout.height)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onChange(of: store.widgetOpenRequest) { _, _ in showingSettings = false; showingTokens = true }
     }
 
     private var header: some View {
@@ -127,6 +128,17 @@ struct DashboardView: View {
             }
             Divider()
             VStack(alignment: .leading, spacing: 8) {
+                Text("桌面小组件").font(.system(size: 12, weight: .semibold))
+                Text("右键桌面 → 编辑小组件 → 搜索 QuotaBar。支持小号用量和中号趋势；右键小组件可切换统计范围。")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                Text(store.widgetStatus ?? "正在准备统计摘要…")
+                    .font(.system(size: 10)).foregroundStyle(.secondary)
+                Button("同步统计摘要") { store.publishWidget(forceReload: true) }.disabled(store.isDemo || store.tokenReport == nil)
+                Text("保持 QuotaBar 在菜单栏运行以更新统计。小组件仅显示本机记录，系统可能延后刷新。")
+                    .font(.system(size: 10)).foregroundStyle(.secondary)
+            }
+            Divider()
+            VStack(alignment: .leading, spacing: 8) {
                 Text("本地数据").font(.system(size: 12, weight: .semibold))
                 Text("Token 来自本机会话日志，仅提取用量元数据，不保存或上传对话。额度快照保留 30 天。清除历史只删除额度快照，不删除原始会话日志。")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
@@ -137,7 +149,7 @@ struct DashboardView: View {
                 }
             }
             if let message = store.settingsMessage { Text(message).font(.caption).foregroundStyle(.orange) }
-            Text("QuotaBar 0.4.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
+            Text("QuotaBar 0.5.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

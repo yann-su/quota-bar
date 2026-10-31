@@ -25,6 +25,9 @@ final class UsageStore: ObservableObject {
     @Published var now = Date()
     @Published var tokenReport: TokenReport?
     @Published var tokensRefreshing = false
+    @Published var widgetStatus: String?
+    @Published var selectedTokenPeriod: TokenPeriod = .sevenDays
+    @Published var widgetOpenRequest = UUID()
     @Published var refreshMinutes: Int { didSet { defaults.set(refreshMinutes, forKey: "refreshMinutes") } }
     @Published var claudeEnabled: Bool { didSet { defaults.set(claudeEnabled, forKey: "claudeEnabled") } }
     @Published var codexPath: String { didSet { defaults.set(codexPath, forKey: "codexPath") } }
@@ -39,6 +42,7 @@ final class UsageStore: ObservableObject {
     private var failures: [Provider: Int] = [:]
     private let tokenScanner = LocalTokenScanner(roots: LocalTokenSources.roots)
     private var lastTokenScan = Date.distantPast
+    private let widgetPublisher = WidgetPublisher()
     private let storageURL: URL
 
     init(demo: Bool = false) {
@@ -97,7 +101,18 @@ final class UsageStore: ObservableObject {
         Task {
             tokenReport = await tokenScanner.scan()
             tokensRefreshing = false
+            publishWidget()
         }
+    }
+    func publishWidget(forceReload: Bool = false) {
+        guard !isDemo, let report = tokenReport else { return }
+        let quotas = Provider.allCases.compactMap { provider -> UsageSnapshot? in
+            guard !isStale(provider) else { return nil }; return state(provider).snapshot
+        }
+        let published = widgetPublisher.publish(report: report, quotas: quotas, forceReload: forceReload)
+        if !published { widgetStatus = "桌面小组件需使用包含扩展和 App Group 的构建。" }
+        else if !WidgetPublisher.hasSigningTeam { widgetStatus = "摘要已写出；本地临时签名未获组件共享权限。请完成开发者签名后使用。" }
+        else { widgetStatus = "摘要已写出。桌面小组件由 macOS 定时刷新。" }
     }
     func exportTokens() {
         guard let tokenReport else { return }
@@ -152,6 +167,7 @@ final class UsageStore: ObservableObject {
                 failures[provider] = 0
                 archive.append(snapshot)
                 persist()
+                publishWidget()
             } catch {
                 states[provider, default: ProviderState()].isRefreshing = false
                 states[provider]?.error = (error as? UsageError)?.localizedDescription ?? "无法读取额度，请稍后重试。"

@@ -2,6 +2,40 @@
 
 原生 macOS 菜单栏用量看板，显示 Claude / Codex 的具体 Token 数和订阅额度。Swift + SwiftUI + AppKit，macOS 14 或更高版本，无第三方依赖。
 
+0.5.0：增加原生 WidgetKit 桌面／通知中心小组件，包含小号用量卡片和中号用量＋近 7 天折线图。可在编辑小组件时选择今日、近 7 天或近 30 天；点击打开主应用的对应统计范围。新增 Xcode 工程与组件构建脚本，41 项测试通过。
+
+**当前本机验收边界：** 扩展已构建、注册并在系统 WidgetKit Simulator 中加载；小、中尺寸布局已渲染检查。主应用可写入摘要，但本机没有 Apple 开发者签名证书，系统实际拒绝临时签名扩展读取 App Group 文件。因此当前本地包只能预览布局，桌面真实数据显示尚需完成签名，不能视作已通过端到端验收。组件会明确显示签名／共享权限问题。
+
+## macOS 小组件
+
+主应用每分钟扫描本机日志，向 App Group 原子写入摘要；只包含服务名、总 Token、每日数值、日期与可用额度百分比，不包含登录令牌、请求 ID、日志路径、模型名或对话内容。组件不扫描日志、不读取凭据、不请求服务商。主应用保持运行时定期请求组件重载；组件请求约 15 分钟后刷新，具体时间由 macOS 决定。跨天后旧的相对时间统计隐藏并提示待更新，过期摘要保留上次更新时间。
+
+完成签名后，将包含扩展的应用移入「应用程序」并至少打开一次，再右键桌面 → 编辑小组件 → 搜索 QuotaBar。选择小号或中号添加；右键组件 → 编辑可切换统计范围。设置里的「同步统计摘要」可写入最新数据并请求重载。
+
+```sh
+# 本机临时签名构建：用于编译与界面预览，不保证共享容器访问
+bash scripts/build-widget-app.sh
+open dist/QuotaBar-Widgets.app
+```
+
+生成 `dist/QuotaBar-Widgets.app` 和通用架构 ZIP。Xcode 工程已提交，可直接打开 `QuotaBar.xcodeproj`；只有修改 `project.yml` 时才需要运行 `xcodegen generate`。
+
+运行时请将 ZIP 解压到本机非同步目录，例如 `~/Applications`。本项目所在 Documents 目录会被文件同步服务附加 Finder 元数据，实测会使嵌入扩展的严格签名校验失败；ZIP 中的干净构建已通过校验。也可设置 `QUOTABAR_APP_OUTPUT="$HOME/Applications/QuotaBar.app"`，让构建脚本直接输出到非同步目录。
+
+要启用共享数据，先在 Xcode → Settings → Accounts 登录 Apple ID，并在 Manage Certificates 中建立有效 Apple Development 或 Developer ID 签名证书。以下两个变量必须替换为实际证书名与实际 Team ID；macOS 专用 App Group 使用签名团队前缀，主应用与组件的值必须一致：
+
+```sh
+QUOTABAR_SIGN_IDENTITY='实际的 Apple Development 或 Developer ID Application 证书名称' \
+QUOTABAR_APP_GROUP='实际TEAMID.dev.quotabar.shared' \
+bash scripts/build-widget-app.sh
+```
+
+脚本会验证签名团队与 App Group 前缀。若从 Xcode 构建，在两个应用目标使用同一团队及有效签名身份，并将 `QUOTABAR_APP_GROUP` 改为实际团队前缀。`group.` 前缀方案还涉及开发者后台 App Group 注册及 provisioning profile，当前脚本采用 macOS 团队前缀方式。
+
+主应用 `--check-widget` 只验证应用端摘要读写；组件端仍需在系统 WidgetKit Simulator 或桌面验证，不能把该命令的成功视为跨进程读取成功。未配置签名时显示权限提示，不用演示数字替代真实统计。
+
+Apple 参考：[创建组件扩展](https://developer.apple.com/documentation/widgetkit/creating-a-widget-extension)、[App Group 容器与 macOS 签名条件](https://developer.apple.com/documentation/xcode/accessing-app-group-containers)、[组件时间线与刷新](https://developer.apple.com/documentation/widgetkit/timeline)。
+
 0.4.0：Token 页点击「趋势」查看 Claude / Codex 双折线，可切换总 Token 或仅输出，悬停显示相应时段的具体数量。今日按小时，7 / 30 天按天；全部历史超过一年时按月聚合。另含两家合计的时段平均值、峰值及输入／输出／缓存读／缓存写构成条。窗口保持 360 × 480，点击「概览」返回紧凑卡片。36 项测试通过，包含分时边界、补零、未来记录过滤、长历史聚合和图表与概览总量一致性。
 
 趋势的零值只表示本机没有对应记录，不代表账号当时没有使用。平均值包含零记录时段与未结束的当前时段。构成条始终显示区间全部 Token；「仅输出」只切换折线及对应均值、峰值。图表使用与概览相同的已去重记录，不额外查询服务商，也不估算未记录用量。
@@ -89,4 +123,4 @@ dist/QuotaBar.app/Contents/MacOS/QuotaBar --check-claude
 dist/QuotaBar.app/Contents/MacOS/QuotaBar --demo
 ```
 
-当前构建产物为本机 Apple Silicon 架构，采用本地 ad-hoc 签名。面向他人分发前需要 Developer ID 签名与公证。当前版本是菜单栏小应用，尚不包含通知中心 WidgetKit 扩展。
+SwiftPM 的 `build-app.sh` 只生成菜单栏应用，不嵌入 WidgetKit 扩展；包含组件的版本使用 `build-widget-app.sh` 或 Xcode 工程构建。菜单栏包为本机架构，组件包为 Intel + Apple Silicon 通用架构。面向他人分发前需要 Developer ID 签名与公证。
