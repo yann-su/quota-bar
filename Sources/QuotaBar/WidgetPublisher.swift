@@ -7,6 +7,7 @@ final class WidgetPublisher {
     private var server: WidgetLocalServer?
     private var lastReload = Date.distantPast
     private var lastDay: Date?
+    private var lastQuotaWindows: [Provider: QuotaProgress] = [:]
     var status: String { server?.status ?? "请安装包含原生小组件的版本。" }
     init() {
         guard let endpoint = WidgetLocalEndpoint.configured else { return }
@@ -18,8 +19,17 @@ final class WidgetPublisher {
         let snapshot = WidgetSnapshot(report: report, quotas: quotas)
         guard let data = try? JSONEncoder().encode(snapshot) else { return false }
         server.update(data)
+        let quotaWindows = Dictionary(uniqueKeysWithValues: snapshot.providers.compactMap { item in
+            item.quota.map { (item.provider, $0) }
+        })
+        // Refresh promptly when a quota first connects, expires, or enters a new
+        // window; ordinary percentage updates still use the normal reload budget.
+        let quotaWindowChanged = Set(quotaWindows.keys) != Set(lastQuotaWindows.keys) || quotaWindows.contains { provider, quota in
+            lastQuotaWindows[provider]?.title != quota.title || lastQuotaWindows[provider]?.resetsAt != quota.resetsAt
+        }
+        lastQuotaWindows = quotaWindows
         let elapsed = Date().timeIntervalSince(lastReload)
-        if elapsed >= 15 * 60 || (forceReload && elapsed >= 5) || lastDay != snapshot.dayStart {
+        if elapsed >= 15 * 60 || (forceReload && elapsed >= 5) || lastDay != snapshot.dayStart || quotaWindowChanged {
             for kind in WidgetKinds.all { WidgetCenter.shared.reloadTimelines(ofKind: kind) }
             lastReload = Date(); lastDay = snapshot.dayStart
         }

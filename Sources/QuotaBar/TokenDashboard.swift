@@ -56,7 +56,8 @@ struct TokenDashboard: View {
                 }
                 else {
                     ForEach(Provider.allCases) { provider in
-                        TokenProviderCard(provider: provider, report: report, period: period, now: store.now)
+                        TokenProviderCard(provider: provider, report: report, period: period, now: store.now,
+                                          quota: store.isStale(provider) ? nil : QuotaProgress(snapshot: store.state(provider).snapshot, now: store.now, maxAge: store.maxAge))
                     }
                 }
             } else {
@@ -74,6 +75,7 @@ private struct TokenProviderCard: View {
     let report: TokenReport
     let period: TokenPeriod
     let now: Date
+    let quota: QuotaProgress?
     @State private var showDetails = CommandLine.arguments.contains("--show-details")
     private var tint: Color { provider == .claude ? Color(red: 0.78, green: 0.43, blue: 0.29) : Color(red: 0.24, green: 0.52, blue: 0.43) }
     private var records: [TokenRecord] { report.filtered(provider: provider, period: period, now: now) }
@@ -141,6 +143,7 @@ private struct TokenProviderCard: View {
             if !estimate.isComplete && available {
                 Text(estimate.coverageText).font(.system(size: 9)).foregroundStyle(.orange)
             }
+            QuotaProgressView(progress: quota, date: now)
         }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(tint.opacity(0.14)))

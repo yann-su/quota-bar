@@ -23,7 +23,9 @@
 		6E9975AE8A1BAE3FCB9C1371 /* QuotaBarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DDDC296625F2B3FB996B43 /* QuotaBarWidget.swift */; };
 		75C60993A8E03D24BCB62124 /* Usage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62743CD95409A46538E88B6A /* Usage.swift */; };
 		7C848E4EA179831847A392E7 /* TokenTrend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC53B9F5CBE98D8DFAB2850C /* TokenTrend.swift */; };
+		8E095985519048DFA75613AD /* QuotaProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7F83C30CB7FD3B669A9967 /* QuotaProgressView.swift */; };
 		907EFA0E7DE19D66750F939D /* TokenLogReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */; };
+		923292BAA164901791EA0040 /* QuotaProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7F83C30CB7FD3B669A9967 /* QuotaProgressView.swift */; };
 		9471AC18898C33BC449B22E1 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AB3C320BE59FBC33517DAB /* App.swift */; };
 		9B4549C5FB84A5E9672F057A /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
 		A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFCF7DB3383B67430BF7CD3 /* PanelLayout.swift */; };
@@ -33,6 +35,7 @@
 		AA2FB483DCBF9CBAD1FB1656 /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
 		B5A681C52731B865C1A78A69 /* WidgetLargeContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF5B00D9A8385012A3F03F /* WidgetLargeContentView.swift */; };
 		B652F103D2D7F9D1EBAC089D /* TokenDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D0442239E23343A9E748460 /* TokenDashboard.swift */; };
+		C61D66BFE440BCEFE5FFA08A /* QuotaProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85C06C9F13D2CFB365B54E1 /* QuotaProgress.swift */; };
 		CB4C2895C54318E71A3E9C79 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FF2BC8BF5C72FE5E25D27C /* WidgetSnapshot.swift */; };
 		CBC3F00AC349C25FE91C9487 /* TokenTrendPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A669B69F8574B9F46F44CC /* TokenTrendPanel.swift */; };
 		D6C59A15B6873A8C78578485 /* QuotaCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBE050B104286F4C643977B /* QuotaCore.framework */; };
@@ -83,6 +86,7 @@
 /* Begin PBXFileReference section */
 		073A3A7F2E83DF1674CD91A1 /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		0D2B2FCA0A969B547F115E02 /* WidgetPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPublisher.swift; sourceTree = "<group>"; };
+		0E7F83C30CB7FD3B669A9967 /* QuotaProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaProgressView.swift; sourceTree = "<group>"; };
 		15E7A9851FE2929B25A439C5 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		2D0442239E23343A9E748460 /* TokenDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenDashboard.swift; sourceTree = "<group>"; };
 		340D75FE53988F42B67F78C3 /* QuotaBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotaBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +106,7 @@
 		8BBE050B104286F4C643977B /* QuotaCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotaCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTokenSources.swift; sourceTree = "<group>"; };
 		98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenLogReader.swift; sourceTree = "<group>"; };
+		A85C06C9F13D2CFB365B54E1 /* QuotaProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaProgress.swift; sourceTree = "<group>"; };
 		A8DAC0F2FD64ABA70F9ED939 /* MenuBarTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = MenuBarTemplate.pdf; sourceTree = "<group>"; };
 		A91EF472A508D8ED0365DCA5 /* PanelHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelHostingView.swift; sourceTree = "<group>"; };
 		AC53B9F5CBE98D8DFAB2850C /* TokenTrend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenTrend.swift; sourceTree = "<group>"; };
@@ -135,6 +140,7 @@
 		6CF0E7A88DB478B8367AB10A /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				0E7F83C30CB7FD3B669A9967 /* QuotaProgressView.swift */,
 				AED391FA878436231BD3552A /* WidgetContentView.swift */,
 				47BF5B00D9A8385012A3F03F /* WidgetLargeContentView.swift */,
 				726D5D052F61A2F18A1F179B /* WidgetLocalClient.swift */,
@@ -145,6 +151,7 @@
 		780981D918564EAA5EB4EBC8 /* QuotaCore */ = {
 			isa = PBXGroup;
 			children = (
+				A85C06C9F13D2CFB365B54E1 /* QuotaProgress.swift */,
 				C024D3518A89558D1715699C /* TokenDisplayValue.swift */,
 				98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */,
 				DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */,
@@ -361,6 +368,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6E9975AE8A1BAE3FCB9C1371 /* QuotaBarWidget.swift in Sources */,
+				8E095985519048DFA75613AD /* QuotaProgressView.swift in Sources */,
 				AA2FB483DCBF9CBAD1FB1656 /* WidgetContentView.swift in Sources */,
 				4104ABD2E986B28517164E55 /* WidgetLargeContentView.swift in Sources */,
 				52563DE19E63128AD88E5D26 /* WidgetLocalClient.swift in Sources */,
@@ -377,6 +385,7 @@
 				E8D4A546C318083675B1FD86 /* PanelHostingView.swift in Sources */,
 				A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */,
 				A711C6BB1C253DE0B2F9969A /* PricingInfoView.swift in Sources */,
+				923292BAA164901791EA0040 /* QuotaProgressView.swift in Sources */,
 				B652F103D2D7F9D1EBAC089D /* TokenDashboard.swift in Sources */,
 				CBC3F00AC349C25FE91C9487 /* TokenTrendPanel.swift in Sources */,
 				A256D7E65990E1B238DFBC2E /* UsageClients.swift in Sources */,
@@ -393,6 +402,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C61D66BFE440BCEFE5FFA08A /* QuotaProgress.swift in Sources */,
 				66241E92DAAD19676DE070E3 /* TokenDisplayValue.swift in Sources */,
 				907EFA0E7DE19D66750F939D /* TokenLogReader.swift in Sources */,
 				106C2DB9EA06724127767984 /* TokenPricing.swift in Sources */,

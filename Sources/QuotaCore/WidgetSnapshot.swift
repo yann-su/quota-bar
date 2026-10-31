@@ -29,9 +29,7 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     public var sevenDays: Int64?
     public var thirtyDays: Int64?
     public var daily: [WidgetDaySample]
-    public var remainingPercent: Int?
-    public var quotaFetchedAt: Date?
-    public var quotaResetsAt: Date?
+    public var quota: QuotaProgress?
     public var partial: Bool
     public var todayCost: TokenCostEstimate?
     public var sevenDaysCost: TokenCostEstimate?
@@ -43,9 +41,8 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
         switch period { case .today: return today; case .sevenDays: return sevenDays; case .thirtyDays: return thirtyDays }
     }
     public func quotaRemaining(at now: Date) -> Int? {
-        guard let quotaFetchedAt, now.timeIntervalSince(quotaFetchedAt) <= 15 * 60,
-              quotaResetsAt.map({ $0.timeIntervalSince(now) > 0 }) ?? true else { return nil }
-        return remainingPercent
+        guard let quota, quota.isCurrent(at: now) else { return nil }
+        return quota.remainingPercent
     }
     public func cost(for period: WidgetPeriod) -> TokenCostEstimate? {
         switch period { case .today: return todayCost; case .sevenDays: return sevenDaysCost; case .thirtyDays: return thirtyDaysCost }
@@ -55,10 +52,10 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-/// This is the complete cross-process payload: no credentials, request IDs,
-/// model names, file paths or conversation content are included.
+/// Aggregate usage and quota-window metadata only: no credentials, request IDs,
+/// log model details, file paths or conversation content are included.
 public struct WidgetSnapshot: Codable, Equatable, Sendable {
-    public static let currentVersion = 3
+    public static let currentVersion = 4
     public var version = currentVersion
     public var generatedAt: Date
     public var dayStart: Date
@@ -86,8 +83,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
             let quota = quotas.first { $0.provider == provider }
             return WidgetProviderSnapshot(provider: provider, today: total(.today), sevenDays: total(.sevenDays),
                 thirtyDays: total(.thirtyDays), daily: available ? trend.buckets.map { WidgetDaySample(date: $0.start, tokens: $0.counts(for: provider).total) } : [],
-                remainingPercent: quota?.availablePercent(at: now, maxAge: 15 * 60), quotaFetchedAt: quota?.fetchedAt,
-                quotaResetsAt: quota?.windows.compactMap(\.resetsAt).min(), partial: coverage.isPartial,
+                quota: QuotaProgress(snapshot: quota, now: now), partial: coverage.isPartial,
                 todayCost: cost(.today), sevenDaysCost: cost(.sevenDays), thirtyDaysCost: cost(.thirtyDays),
                 todaySplit: split(.today), sevenDaysSplit: split(.sevenDays), thirtyDaysSplit: split(.thirtyDays))
         }

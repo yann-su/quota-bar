@@ -283,13 +283,18 @@ private struct WidgetPreviewView: View {
     var large: Bool
     var wide: Bool
     var showsInputOutput: Bool
+    private var snapshot: WidgetSnapshot? {
+        guard let report = store.tokenReport else { return nil }
+        let quotas = Provider.allCases.compactMap { store.isStale($0) ? nil : store.state($0).snapshot }
+        return WidgetSnapshot(report: report, quotas: quotas, now: store.now)
+    }
     @ViewBuilder
     var body: some View {
         if large {
-            WidgetLargeContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
+            WidgetLargeContentView(snapshot: snapshot,
                                    period: .sevenDays, date: store.now, wide: wide, isPreview: store.isDemo)
         } else {
-            WidgetContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
+            WidgetContentView(snapshot: snapshot,
                 period: .sevenDays, date: store.now, isSmall: small, isPreview: store.isDemo, showsInputOutput: showsInputOutput)
         }
     }

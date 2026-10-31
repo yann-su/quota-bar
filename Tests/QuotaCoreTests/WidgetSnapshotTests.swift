@@ -61,7 +61,7 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(snapshot.providers[0].quotaRemaining(at: now), 75)
         XCTAssertNil(snapshot.providers[0].quotaRemaining(at: now.addingTimeInterval(601)))
         XCTAssertNil(snapshot.providers[1].quotaRemaining(at: now))
-        var value = snapshot.providers[0]; value.quotaResetsAt = nil
+        var value = snapshot.providers[0]; value.quota?.resetsAt = nil
         XCTAssertNil(value.quotaRemaining(at: now.addingTimeInterval(901)))
     }
     func testAtomicStoragePermissionsAndUnknownSchema() throws {

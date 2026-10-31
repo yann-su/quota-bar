@@ -19,12 +19,12 @@ struct WidgetLargeContentView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: wide ? 12 : 10) {
+        VStack(alignment: .leading, spacing: wide ? 12 : 8) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.xyaxis.line").foregroundStyle(.secondary)
                 Text("QuotaBar").fontWeight(.semibold)
                 Spacer()
-                Text(period.title).font(.system(size: 11, weight: .medium))
+                Text("Token · \(period.title)").font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 9).padding(.vertical, 4)
                     .background(.primary.opacity(0.06), in: Capsule())
             }.font(.system(size: 14))
@@ -65,7 +65,7 @@ struct WidgetLargeContentView: View {
         let cost = currentDay ? item?.cost(for: period) : nil
         let split = currentDay ? item?.split(for: period) : nil
         let display = count.map(TokenDisplayValue.format)
-        return VStack(alignment: .leading, spacing: wide ? 12 : 7) {
+        return VStack(alignment: .leading, spacing: wide ? 7 : 5) {
             HStack(spacing: 5) {
                 Circle().fill(tint(provider)).frame(width: 6, height: 6)
                 Text(provider == .claude ? "Claude" : "Codex").fontWeight(.semibold)
@@ -76,28 +76,31 @@ struct WidgetLargeContentView: View {
                 }
             }.font(.system(size: 12))
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: wide ? 3 : 1) {
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(display?.number ?? "—")
-                        .font(.system(size: wide ? 32 : 27, weight: .semibold, design: .rounded))
+                        .font(.system(size: wide ? 30 : 27, weight: .semibold, design: .rounded))
                         .monospacedDigit().minimumScaleFactor(0.7).lineLimit(1)
                     if let display, !display.unit.isEmpty {
                         Text(display.unit).font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
                     }
                 }
-                Text("总 Token").font(.system(size: 9)).foregroundStyle(.secondary)
+                if wide { Text("总 Token").font(.system(size: 9)).foregroundStyle(.secondary) }
                 Text(cost.map { "\($0.hasKnownCost && !$0.isComplete ? "部分 " : "")\($0.referenceText)" } ?? "—")
                     .font(.system(size: wide ? 13 : 11, weight: .medium))
                     .lineLimit(1).minimumScaleFactor(0.7)
-            }.accessibilityElement(children: .ignore)
+            }.fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel("总计\(count.map { "\($0)个 Token" } ?? "待更新")，API参考\(cost?.referenceText ?? "未知")")
 
             Divider().overlay(tint(provider).opacity(0.15))
             directionRow(.input, split: split, cost: cost)
             directionRow(.output, split: split, cost: cost)
+            Divider().opacity(0.4)
+            QuotaProgressView(progress: item?.quota, date: date, compact: !wide)
             if wide { Spacer(minLength: 0) }
         }
-        .padding(wide ? 14 : 10)
+        .padding(wide ? 12 : 10)
         .frame(maxWidth: .infinity, maxHeight: wide ? .infinity : nil, alignment: .topLeading)
         .background(tint(provider).opacity(0.07), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(tint(provider).opacity(0.16), lineWidth: 0.5))
@@ -166,7 +169,7 @@ struct WidgetLargeContentView: View {
                     }
                 }
             }
-            .frame(minHeight: wide ? 105 : 64)
+            .frame(minHeight: wide ? 105 : 50)
         }.accessibilityElement(children: .ignore)
             .accessibilityLabel("近七天 Claude 与 Codex 每日 Token 趋势；没有本机记录的日期显示为零。")
     }
