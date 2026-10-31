@@ -7,7 +7,7 @@ struct TokenTrendPanel: View {
     let period: TokenPeriod
     let now: Date
     let isPartial: Bool
-    @State private var metric: TokenTrendMetric = .total
+    @State private var metric: TokenTrendMetric = CommandLine.arguments.contains("--trend-input") ? .input : .total
     @State private var selectedDate: Date?
     private var selected: TokenTimeBucket? { selectedDate.flatMap { trend.nearest(to: $0) } }
     private let claudeColor = Color(red: 0.78, green: 0.43, blue: 0.29)
@@ -21,7 +21,7 @@ struct TokenTrendPanel: View {
                 Spacer()
                 Picker("折线指标", selection: $metric) {
                     ForEach(TokenTrendMetric.allCases) { value in Text(value.title).tag(value) }
-                }.pickerStyle(.segmented).controlSize(.mini).labelsHidden().frame(width: 112)
+                }.pickerStyle(.segmented).controlSize(.mini).labelsHidden().frame(width: 152)
             }
             HStack {
                 legend(.claude, data: data)
@@ -34,7 +34,7 @@ struct TokenTrendPanel: View {
             HStack {
                 Text(selected.map { dateLabel($0.start, granularity: data.granularity) } ?? "移动鼠标查看各时段用量")
                 Spacer()
-                Text(metric == .total ? "含缓存" : "仅输出 Token")
+                Text(metric == .output ? "仅输出 Token" : metric == .input ? "输入含缓存" : "含缓存")
             }.font(.system(size: 8)).foregroundStyle(.secondary)
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -158,7 +158,7 @@ struct TokenTrendPanel: View {
     }
 
     private func parts(_ counts: TokenCounts) -> [(name: String, value: Int64, color: Color)] {
-        [("输入", counts.input, .blue), ("输出", counts.output, .purple),
+        [("普通输入", counts.input, .blue), ("输出", counts.output, .purple),
          ("缓存读", counts.cacheRead, .teal), ("缓存写", counts.cacheWrite, .orange)]
     }
     private func dateLabel(_ date: Date, granularity: TokenTrendGranularity) -> String {

@@ -1,10 +1,14 @@
 import Foundation
 
 public enum TokenTrendMetric: String, CaseIterable, Identifiable, Sendable {
-    case total, output
+    case total, input, output
     public var id: Self { self }
-    public var title: String { self == .total ? "总计" : "仅输出" }
-    public func value(_ counts: TokenCounts) -> Int64 { self == .total ? counts.total : counts.output }
+    public var title: String {
+        switch self { case .total: return "总计"; case .input: return "仅输入"; case .output: return "仅输出" }
+    }
+    public func value(_ counts: TokenCounts) -> Int64 {
+        switch self { case .total: return counts.total; case .input: return counts.totalInput; case .output: return counts.output }
+    }
 }
 
 public enum TokenTrendGranularity: Sendable {

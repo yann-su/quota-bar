@@ -16,6 +16,7 @@ struct UsageWidgetConfiguration: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Token 用量"
     static var description = IntentDescription("选择要显示的本机 Token 统计范围。中号小组件附带近 7 天趋势。")
     @Parameter(title: "统计范围", default: .sevenDays) var period: WidgetPeriodChoice
+    @Parameter(title: "显示输入／输出", default: false) var showsInputOutput: Bool
 }
 
 struct UsageWidgetEntry: TimelineEntry {
@@ -23,6 +24,7 @@ struct UsageWidgetEntry: TimelineEntry {
     let snapshot: WidgetSnapshot?
     let period: WidgetPeriod
     var issue: WidgetLoadIssue?
+    var showsInputOutput = false
 }
 
 struct UsageWidgetProvider: AppIntentTimelineProvider {
@@ -33,21 +35,21 @@ struct UsageWidgetProvider: AppIntentTimelineProvider {
     }
     func snapshot(for configuration: UsageWidgetConfiguration, in context: Context) async -> UsageWidgetEntry {
         let result = WidgetSharedContainer.load()
-        return UsageWidgetEntry(date: Date(), snapshot: result.snapshot, period: configuration.period.period, issue: result.issue)
+        return UsageWidgetEntry(date: Date(), snapshot: result.snapshot, period: configuration.period.period, issue: result.issue, showsInputOutput: configuration.showsInputOutput)
     }
     func timeline(for configuration: UsageWidgetConfiguration, in context: Context) async -> Timeline<UsageWidgetEntry> {
         let now = Date()
         let result = WidgetSharedContainer.load()
         let snapshot = result.snapshot
-        let entry = UsageWidgetEntry(date: now, snapshot: snapshot, period: configuration.period.period, issue: result.issue)
+        let entry = UsageWidgetEntry(date: now, snapshot: snapshot, period: configuration.period.period, issue: result.issue, showsInputOutput: configuration.showsInputOutput)
         // Midnight entries invalidate relative period totals even when the host
         // is closed and macOS delays the next provider execution.
         let midnight = Calendar.current.nextDate(after: now, matching: DateComponents(hour: 0), matchingPolicy: .nextTime)!
         var entries = [entry]
         if let expiry = snapshot?.generatedAt.addingTimeInterval(20 * 60 + 1), expiry > now, expiry < midnight {
-            entries.append(UsageWidgetEntry(date: expiry, snapshot: snapshot, period: configuration.period.period, issue: result.issue))
+            entries.append(UsageWidgetEntry(date: expiry, snapshot: snapshot, period: configuration.period.period, issue: result.issue, showsInputOutput: configuration.showsInputOutput))
         }
-        entries.append(UsageWidgetEntry(date: midnight, snapshot: snapshot, period: configuration.period.period, issue: result.issue))
+        entries.append(UsageWidgetEntry(date: midnight, snapshot: snapshot, period: configuration.period.period, issue: result.issue, showsInputOutput: configuration.showsInputOutput))
         return Timeline(entries: entries, policy: .after(now.addingTimeInterval(15 * 60)))
     }
 }
@@ -56,7 +58,7 @@ struct UsageWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: UsageWidgetEntry
     var body: some View {
-        WidgetContentView(snapshot: entry.snapshot, period: entry.period, date: entry.date, isSmall: family == .systemSmall, issue: entry.issue)
+        WidgetContentView(snapshot: entry.snapshot, period: entry.period, date: entry.date, isSmall: family == .systemSmall, issue: entry.issue, showsInputOutput: entry.showsInputOutput)
             .containerBackground(.background, for: .widget)
             .widgetURL(URL(string: "quotabar://open?period=\(entry.period.rawValue)"))
     }
@@ -69,7 +71,7 @@ struct QuotaBarWidget: Widget {
             UsageWidgetView(entry: entry)
         }
         .configurationDisplayName("Claude & Codex 用量")
-        .description("本机 Token 总量与近 7 天趋势。点击打开 QuotaBar，刷新由 macOS 调度。")
+        .description("本机 Token 用量，可切换输入／输出数量与参考费用。中号附带近 7 天总量趋势。")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

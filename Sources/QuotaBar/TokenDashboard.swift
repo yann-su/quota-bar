@@ -13,6 +13,7 @@ struct TokenDashboard: View {
             }.pickerStyle(.segmented).controlSize(.small).labelsHidden()
             HStack {
                 Text("本机 Token · 含缓存").font(.system(size: 10, weight: .medium))
+                    .help("仅统计本机已保存记录，不含网页／手机用量。输入含两类缓存；输入加输出等于总量。API 折合仅供参考，非订阅扣款。悬停数量可查看精确值，CSV 保留精确整数。")
                 Spacer()
                 Button { showingPrices.toggle() } label: { Image(systemName: "dollarsign.circle") }
                     .buttonStyle(.borderless).font(.system(size: 12)).help("查看 API 折合单价与计算说明")
@@ -35,7 +36,14 @@ struct TokenDashboard: View {
                                 Text(provider.title).font(.system(size: 9)).foregroundStyle(.secondary)
                                 let coverage = report.coverage[provider] ?? TokenCoverage()
                                 if coverage.directoryFound && !(coverage.files == 0 && coverage.unreadableFiles > 0) {
-                                    TokenCostLabel(estimate: report.cost(provider: provider, period: period, now: store.now))
+                                    let estimate = report.cost(provider: provider, period: period, now: store.now)
+                                    TokenCostLabel(estimate: estimate)
+                                    HStack(spacing: 3) {
+                                        Text("入")
+                                        DirectionCostLabel(estimate: estimate, direction: .input)
+                                        Text("出")
+                                        DirectionCostLabel(estimate: estimate, direction: .output)
+                                    }.font(.system(size: 8)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
                                 } else {
                                     Text("记录不可用").font(.system(size: 10)).foregroundStyle(.secondary)
                                 }
@@ -57,11 +65,6 @@ struct TokenDashboard: View {
                     Text("正在统计本机历史…").font(.system(size: 11)).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity).padding(.vertical, 40)
             }
-            if !showingTrends {
-                Text("本机记录 · API 折合仅供参考，非订阅扣款。")
-                .font(.system(size: 9)).foregroundStyle(.secondary)
-                .help("总计 = 普通输入 + 输出 + 缓存读取 + 缓存写入。仅统计本机保存的记录，日期按 \(TimeZone.current.identifier) 划分。万／亿为四舍五入的显示值，导出 CSV 保留精确整数。")
-            }
         }
     }
 }
@@ -71,7 +74,7 @@ private struct TokenProviderCard: View {
     let report: TokenReport
     let period: TokenPeriod
     let now: Date
-    @State private var showDetails = false
+    @State private var showDetails = CommandLine.arguments.contains("--show-details")
     private var tint: Color { provider == .claude ? Color(red: 0.78, green: 0.43, blue: 0.29) : Color(red: 0.24, green: 0.52, blue: 0.43) }
     private var records: [TokenRecord] { report.filtered(provider: provider, period: period, now: now) }
     private var counts: TokenCounts { records.reduce(.zero) { $0 + $1.counts } }
@@ -84,12 +87,14 @@ private struct TokenProviderCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let estimate = cost
+        let counts = self.counts
+        return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(provider == .claude ? "Claude Code" : "Codex")
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(tint)
-                    if available { TokenCostLabel(estimate: cost) }
+                    if available { TokenCostLabel(estimate: estimate) }
                 }
                 Spacer(minLength: 8)
                 if available {
@@ -103,8 +108,11 @@ private struct TokenProviderCard: View {
                 } else { Text("—").font(.system(size: 24, weight: .semibold)) }
             }
             if available {
-                Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 7) {
-                    GridRow { metric("普通输入", counts.input); metric("输出", counts.output) }
+                Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 6) {
+                    GridRow {
+                        ioMetric(.input, tokens: counts.totalInput, estimate: estimate)
+                        ioMetric(.output, tokens: counts.output, estimate: estimate)
+                    }
                     GridRow { metric("缓存读取", counts.cacheRead); metric("缓存写入", counts.cacheWrite) }
                 }
                 if records.isEmpty {
@@ -130,8 +138,8 @@ private struct TokenProviderCard: View {
                 Label("部分记录无法读取，统计可能不完整。", systemImage: "exclamationmark.circle")
                     .font(.system(size: 9)).foregroundStyle(.orange)
             }
-            if !cost.isComplete && available {
-                Text(cost.coverageText).font(.system(size: 9)).foregroundStyle(.orange)
+            if !estimate.isComplete && available {
+                Text(estimate.coverageText).font(.system(size: 9)).foregroundStyle(.orange)
             }
         }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
@@ -139,13 +147,25 @@ private struct TokenProviderCard: View {
     }
 
     private var details: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let estimate = cost
+        let counts = self.counts
+        return VStack(alignment: .leading, spacing: 8) {
             Divider().opacity(0.5)
             HStack {
                 Text("精确合计").foregroundStyle(.secondary)
                 Spacer()
                 Text("\(exact(counts.total)) tokens").monospacedDigit().textSelection(.enabled)
             }.font(.system(size: 10))
+            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 5) {
+                GridRow { Text("类别"); Text("Token"); Text("已定价折合") }
+                    .foregroundStyle(.secondary)
+                costRow("普通输入", tokens: counts.input, usd: estimate.inputUSD)
+                costRow("输出", tokens: counts.output, usd: estimate.outputUSD)
+                costRow("缓存读取", tokens: counts.cacheRead, usd: estimate.cacheReadUSD)
+                costRow("缓存写入", tokens: counts.cacheWrite, usd: estimate.cacheWriteUSD)
+            }.font(.system(size: 9)).frame(maxWidth: .infinity, alignment: .leading)
+            Text("输入合计包含普通输入与两类缓存；表中费用仅含已定价记录。")
+                .font(.system(size: 9)).foregroundStyle(.secondary)
             ForEach(models, id: \.name) { model in
                 let estimate = TokenCostEstimate.estimate(records.filter { $0.model == model.name })
                 VStack(alignment: .leading, spacing: 2) {
@@ -156,6 +176,17 @@ private struct TokenProviderCard: View {
                             .help("\(exact(model.counts.total)) tokens")
                     }.font(.system(size: 10))
                     TokenCostLabel(estimate: estimate)
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("输入 \(TokenDisplayValue.format(model.counts.totalInput).text)")
+                            DirectionCostLabel(estimate: estimate, direction: .input)
+                        }
+                        Spacer(minLength: 0)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("输出 \(TokenDisplayValue.format(model.counts.output).text)")
+                            DirectionCostLabel(estimate: estimate, direction: .output)
+                        }
+                    }.font(.system(size: 9)).foregroundStyle(.secondary)
                 }
             }
             HStack {
@@ -165,6 +196,23 @@ private struct TokenProviderCard: View {
                     Text("最近 \(last.timestamp.formatted(.dateTime.month(.twoDigits).day(.twoDigits)))")
                 }
             }.font(.system(size: 9)).foregroundStyle(.tertiary)
+        }
+    }
+
+    private func ioMetric(_ direction: TokenDirection, tokens: Int64, estimate: TokenCostEstimate) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            metric(direction == .input ? "输入·含缓存" : "输出", tokens)
+            DirectionCostLabel(estimate: estimate, direction: direction)
+        }.frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(direction.title)\(tokens)个 Token，参考折合\(estimate.referenceText(for: direction))，未定价\(estimate.unpricedTokens(for: direction))个 Token")
+    }
+
+    private func costRow(_ title: String, tokens: Int64, usd: Decimal) -> some View {
+        GridRow {
+            Text(title).foregroundStyle(.secondary)
+            Text(exact(tokens)).monospacedDigit().textSelection(.enabled)
+            Text(TokenCostEstimate.money(usd)).monospacedDigit().textSelection(.enabled)
         }
     }
 

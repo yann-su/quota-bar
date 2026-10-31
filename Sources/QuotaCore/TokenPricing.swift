@@ -70,21 +70,49 @@ public enum TokenPriceCatalog {
     }
 }
 
+public enum TokenDirection: String, CaseIterable, Identifiable, Sendable {
+    case input, output
+    public var id: Self { self }
+    public var title: String { self == .input ? "输入（含缓存）" : "输出" }
+    public func tokens(in counts: TokenCounts) -> Int64 { self == .input ? counts.totalInput : counts.output }
+}
+
 public struct TokenCostEstimate: Codable, Equatable, Sendable {
     public var inputUSD: Decimal = 0
     public var outputUSD: Decimal = 0
     public var cacheReadUSD: Decimal = 0
     public var cacheWriteUSD: Decimal = 0
-    public var pricedTokens: Int64 = 0
-    public var unpricedTokens: Int64 = 0
+    public var pricedInputTokens: Int64 = 0
+    public var pricedOutputTokens: Int64 = 0
+    public var unpricedInputTokens: Int64 = 0
+    public var unpricedOutputTokens: Int64 = 0
     public var assumedCacheLifetime = false
     public var totalUSD: Decimal { inputUSD + outputUSD + cacheReadUSD + cacheWriteUSD }
+    public var pricedTokens: Int64 { Self.sum(pricedInputTokens, pricedOutputTokens) }
+    public var unpricedTokens: Int64 { Self.sum(unpricedInputTokens, unpricedOutputTokens) }
     public var isComplete: Bool { unpricedTokens == 0 }
     public var hasKnownCost: Bool { pricedTokens > 0 || unpricedTokens == 0 }
     public var displayUSD: String { hasKnownCost ? Self.money(totalUSD) : "未定价" }
     public var referenceText: String {
-        guard hasKnownCost else { return "未定价" }
-        return displayUSD.hasPrefix("<") ? displayUSD : "≈ \(displayUSD)"
+        Self.reference(totalUSD, known: hasKnownCost)
+    }
+    public func amountUSD(for direction: TokenDirection) -> Decimal {
+        direction == .input ? inputUSD + cacheReadUSD + cacheWriteUSD : outputUSD
+    }
+    public func unpricedTokens(for direction: TokenDirection) -> Int64 {
+        direction == .input ? unpricedInputTokens : unpricedOutputTokens
+    }
+    public func isComplete(for direction: TokenDirection) -> Bool { unpricedTokens(for: direction) == 0 }
+    public func hasKnownCost(for direction: TokenDirection) -> Bool {
+        (direction == .input ? pricedInputTokens : pricedOutputTokens) > 0 || isComplete(for: direction)
+    }
+    public func referenceText(for direction: TokenDirection) -> String {
+        Self.reference(amountUSD(for: direction), known: hasKnownCost(for: direction))
+    }
+    private static func reference(_ amount: Decimal, known: Bool) -> String {
+        guard known else { return "未定价" }
+        let display = money(amount)
+        return display.hasPrefix("<") ? display : "≈ \(display)"
     }
     public var coverageText: String {
         if isComplete { return "已覆盖全部已记录 Token" }
@@ -100,8 +128,14 @@ public struct TokenCostEstimate: Codable, Equatable, Sendable {
         formatter.minimumFractionDigits = 2; formatter.maximumFractionDigits = 2
         return formatter.string(from: NSDecimalNumber(decimal: value)) ?? "—"
     }
-    private mutating func addPriced(_ value: Int64) { pricedTokens = Self.sum(pricedTokens, value) }
-    private mutating func addUnpriced(_ value: Int64) { unpricedTokens = Self.sum(unpricedTokens, value) }
+    private mutating func addPriced(_ value: Int64, for direction: TokenDirection) {
+        if direction == .input { pricedInputTokens = Self.sum(pricedInputTokens, value) }
+        else { pricedOutputTokens = Self.sum(pricedOutputTokens, value) }
+    }
+    private mutating func addUnpriced(_ value: Int64, for direction: TokenDirection) {
+        if direction == .input { unpricedInputTokens = Self.sum(unpricedInputTokens, value) }
+        else { unpricedOutputTokens = Self.sum(unpricedOutputTokens, value) }
+    }
     private static func sum(_ a: Int64, _ b: Int64) -> Int64 {
         let (value, overflow) = a.addingReportingOverflow(b); return overflow ? Int64.max : value
     }
@@ -110,24 +144,27 @@ public struct TokenCostEstimate: Codable, Equatable, Sendable {
         for record in records {
             let counts = record.counts
             guard let rate = TokenPriceCatalog.price(provider: record.provider, model: record.model) else {
-                result.addUnpriced(counts.total); continue
+                result.addUnpriced(counts.totalInput, for: .input)
+                result.addUnpriced(counts.output, for: .output)
+                continue
             }
             let million: Decimal = 1_000_000
             result.inputUSD += Decimal(counts.input) * rate.input / million
             result.outputUSD += Decimal(counts.output) * rate.output / million
             result.cacheReadUSD += Decimal(counts.cacheRead) * rate.cacheRead / million
-            result.addPriced(TokenCounts(input: counts.input, output: counts.output, cacheRead: counts.cacheRead).total)
+            result.addPriced(TokenCounts(input: counts.input, cacheRead: counts.cacheRead).total, for: .input)
+            result.addPriced(counts.output, for: .output)
             guard counts.cacheWrite > 0 else { continue }
-            guard let shortRate = rate.cacheWrite else { result.addUnpriced(counts.cacheWrite); continue }
+            guard let shortRate = rate.cacheWrite else { result.addUnpriced(counts.cacheWrite, for: .input); continue }
             let long = min(counts.cacheWrite, max(0, record.longCacheWriteTokens ?? 0))
-            if long > 0 && rate.cacheWriteLong == nil { result.addUnpriced(long) }
+            if long > 0 && rate.cacheWriteLong == nil { result.addUnpriced(long, for: .input) }
             else {
                 result.cacheWriteUSD += Decimal(long) * (rate.cacheWriteLong ?? shortRate) / million
-                result.addPriced(long)
+                result.addPriced(long, for: .input)
             }
             let short = counts.cacheWrite - long
             result.cacheWriteUSD += Decimal(short) * shortRate / million
-            result.addPriced(short)
+            result.addPriced(short, for: .input)
             if record.longCacheWriteTokens == nil { result.assumedCacheLifetime = true }
         }
         return result

@@ -129,7 +129,7 @@ struct DashboardView: View {
             Divider()
             VStack(alignment: .leading, spacing: 8) {
                 Text("桌面小组件").font(.system(size: 12, weight: .semibold))
-                Text("右键桌面 → 编辑小组件 → 搜索 QuotaBar。支持小号用量和中号趋势；右键小组件可切换统计范围。")
+                Text("右键桌面 → 编辑小组件 → 搜索 QuotaBar。右键组件可切换统计范围，也可开启输入／输出数量与费用。")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                 Text(store.widgetStatus ?? "正在准备统计摘要…")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
@@ -149,7 +149,7 @@ struct DashboardView: View {
                 }
             }
             if let message = store.settingsMessage { Text(message).font(.caption).foregroundStyle(.orange) }
-            Text("QuotaBar 0.6.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
+            Text("QuotaBar 0.7.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

@@ -11,6 +11,17 @@ struct TokenCostLabel: View {
     }
 }
 
+struct DirectionCostLabel: View {
+    let estimate: TokenCostEstimate
+    let direction: TokenDirection
+    var body: some View {
+        Text("\(estimate.hasKnownCost(for: direction) && !estimate.isComplete(for: direction) ? "部分 " : "")\(estimate.referenceText(for: direction))")
+            .font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+            .lineLimit(1).minimumScaleFactor(0.7)
+            .help("\(direction.title)的 API 参考费用。\(direction == .input ? "包含普通输入、缓存读取和缓存写入费用。" : "推理 Token 已包含在输出中。")\n未定价 \(TokenDisplayValue.format(estimate.unpricedTokens(for: direction)).text) Token\n分项分别四舍五入，显示值与合计可能相差 1 美分。\n\(TokenPriceCatalog.assumptions)")
+    }
+}
+
 struct PricingInfoView: View {
     private struct Model: Identifiable {
         var provider: Provider

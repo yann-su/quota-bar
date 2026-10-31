@@ -15,6 +15,7 @@ public struct TokenCounts: Equatable, Sendable {
         return overflow ? Int64.max : value
     }
     public var total: Int64 { Self.add(Self.add(input, output), Self.add(cacheRead, cacheWrite)) }
+    public var totalInput: Int64 { Self.add(Self.add(input, cacheRead), cacheWrite) }
     public static func + (a: Self, b: Self) -> Self {
         Self(input: add(a.input, b.input), output: add(a.output, b.output),
              cacheRead: add(a.cacheRead, b.cacheRead), cacheWrite: add(a.cacheWrite, b.cacheWrite))

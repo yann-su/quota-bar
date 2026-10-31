@@ -16,6 +16,13 @@ public struct WidgetDaySample: Codable, Equatable, Sendable, Identifiable {
     public var id: Date { date }
 }
 
+public struct WidgetTokenSplit: Codable, Equatable, Sendable {
+    public var input: Int64
+    public var output: Int64
+    public init(_ counts: TokenCounts) { input = counts.totalInput; output = counts.output }
+    public func tokens(for direction: TokenDirection) -> Int64 { direction == .input ? input : output }
+}
+
 public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     public var provider: Provider
     public var today: Int64?
@@ -29,6 +36,9 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     public var todayCost: TokenCostEstimate?
     public var sevenDaysCost: TokenCostEstimate?
     public var thirtyDaysCost: TokenCostEstimate?
+    public var todaySplit: WidgetTokenSplit?
+    public var sevenDaysSplit: WidgetTokenSplit?
+    public var thirtyDaysSplit: WidgetTokenSplit?
     public func total(for period: WidgetPeriod) -> Int64? {
         switch period { case .today: return today; case .sevenDays: return sevenDays; case .thirtyDays: return thirtyDays }
     }
@@ -40,12 +50,15 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     public func cost(for period: WidgetPeriod) -> TokenCostEstimate? {
         switch period { case .today: return todayCost; case .sevenDays: return sevenDaysCost; case .thirtyDays: return thirtyDaysCost }
     }
+    public func split(for period: WidgetPeriod) -> WidgetTokenSplit? {
+        switch period { case .today: return todaySplit; case .sevenDays: return sevenDaysSplit; case .thirtyDays: return thirtyDaysSplit }
+    }
 }
 
 /// This is the complete cross-process payload: no credentials, request IDs,
 /// model names, file paths or conversation content are included.
 public struct WidgetSnapshot: Codable, Equatable, Sendable {
-    public static let currentVersion = 2
+    public static let currentVersion = 3
     public var version = currentVersion
     public var generatedAt: Date
     public var dayStart: Date
@@ -67,12 +80,16 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
             func cost(_ period: TokenPeriod) -> TokenCostEstimate? {
                 available ? report.cost(provider: provider, period: period, now: now, calendar: calendar) : nil
             }
+            func split(_ period: TokenPeriod) -> WidgetTokenSplit? {
+                available ? WidgetTokenSplit(report.totals(provider: provider, period: period, now: now, calendar: calendar)) : nil
+            }
             let quota = quotas.first { $0.provider == provider }
             return WidgetProviderSnapshot(provider: provider, today: total(.today), sevenDays: total(.sevenDays),
                 thirtyDays: total(.thirtyDays), daily: available ? trend.buckets.map { WidgetDaySample(date: $0.start, tokens: $0.counts(for: provider).total) } : [],
                 remainingPercent: quota?.availablePercent(at: now, maxAge: 15 * 60), quotaFetchedAt: quota?.fetchedAt,
                 quotaResetsAt: quota?.windows.compactMap(\.resetsAt).min(), partial: coverage.isPartial,
-                todayCost: cost(.today), sevenDaysCost: cost(.sevenDays), thirtyDaysCost: cost(.thirtyDays))
+                todayCost: cost(.today), sevenDaysCost: cost(.sevenDays), thirtyDaysCost: cost(.thirtyDays),
+                todaySplit: split(.today), sevenDaysSplit: split(.sevenDays), thirtyDaysSplit: split(.thirtyDays))
         }
     }
     public func matchesCurrentDay(at now: Date, calendar: Calendar = .current) -> Bool {

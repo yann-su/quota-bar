@@ -53,7 +53,7 @@ enum QuotaBarMain {
                 for provider in Provider.allCases {
                     for period in TokenPeriod.allCases {
                         let cost = report.cost(provider: provider, period: period, now: report.scannedAt)
-                        print("\(provider.title) \(period.title): \(cost.displayUSD); priced=\(cost.pricedTokens); unpriced=\(cost.unpricedTokens); assumedCacheTTL=\(cost.assumedCacheLifetime)")
+                        print("\(provider.title) \(period.title): \(cost.displayUSD); input=\(cost.referenceText(for: .input)); output=\(cost.referenceText(for: .output)); priced=\(cost.pricedTokens); unpriced=\(cost.unpricedTokens); unpricedInput=\(cost.unpricedInputTokens); unpricedOutput=\(cost.unpricedOutputTokens); assumedCacheTTL=\(cost.assumedCacheLifetime)")
                     }
                     let models = Set(report.records.filter { $0.provider == provider }.map(\.model)).sorted()
                     for model in models {
@@ -137,7 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if widgetPreview {
             let small = CommandLine.arguments.contains("--widget-preview-small")
             let size = NSSize(width: small ? 170 : 360, height: 170)
-            let view = WidgetPreviewView(store: store, small: small)
+            let view = WidgetPreviewView(store: store, small: small, showsInputOutput: CommandLine.arguments.contains("--widget-preview-io"))
                 .padding(16).frame(width: size.width, height: size.height)
                 .background(Color(nsColor: .windowBackgroundColor)).clipShape(RoundedRectangle(cornerRadius: 20))
             panel.setContentSize(size)
@@ -266,8 +266,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 private struct WidgetPreviewView: View {
     @ObservedObject var store: UsageStore
     var small: Bool
+    var showsInputOutput: Bool
     var body: some View {
         WidgetContentView(snapshot: store.tokenReport.map { WidgetSnapshot(report: $0, now: store.now) },
-            period: .sevenDays, date: store.now, isSmall: small, isPreview: store.isDemo)
+            period: .sevenDays, date: store.now, isSmall: small, isPreview: store.isDemo, showsInputOutput: showsInputOutput)
     }
 }
