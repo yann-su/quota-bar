@@ -48,7 +48,7 @@ Claude 缓存写入优先读取日志中 5 分钟／1 小时的分类，已知�
 pluginkit -e default -i dev.quotabar.mac.widgets
 ```
 
-本机验收：62 项测试通过（包含真实回环通信、错误访问令牌和未知摘要版本）；已安装的临时签名扩展由系统 chronod 启动，读取真实两家统计并成功生成中号时间线，扩展自身缓存也已写入。锁屏期间无法检查实际屏幕布局，普通应用内预览不作为系统宿主验收依据。旧方案被拒绝的是 App Group 共享文件访问，不能据此推断全部原生组件都必须有开发者证书。
+本机验收：62 项测试通过（包含真实回环通信、错误访问令牌和未知摘要版本）；已安装的临时签名扩展由系统 chronod 启动，读取真实两家统计并成功生成中号时间线，扩展自身缓存也已写入。解锁后已在系统 WidgetKit Simulator 中逐一检查小号和中号真实画面：两家输入／输出与参考费用正常显示，中号近 7 天双折线和时间线过期／跨天状态正常。普通应用内预览不作为系统宿主验收依据。旧方案被拒绝的是 App Group 共享文件访问，不能据此推断全部原生组件都必须有开发者证书。
 
 Apple 参考：[创建组件扩展](https://developer.apple.com/documentation/widgetkit/creating-a-widget-extension)、[StaticConfiguration](https://developer.apple.com/documentation/widgetkit/staticconfiguration)、[本机网络 ATS 配置](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking)、[组件时间线与刷新](https://developer.apple.com/documentation/widgetkit/timeline)。
 
