@@ -12,7 +12,6 @@ struct WidgetContentView: View {
     var isPreview = false
     var issue: WidgetLoadIssue?
     var showsInputOutput = false
-    var showsHeader = true
 
     private var currentDay: Bool { snapshot?.matchesCurrentDay(at: date) == true }
     private var outdated: Bool { snapshot?.isStale(at: date) != false || !currentDay }
@@ -22,14 +21,12 @@ struct WidgetContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: isSmall ? 6 : 8) {
-            if showsHeader {
-                HStack(spacing: 4) {
-                    Image(systemName: "chart.xyaxis.line").foregroundStyle(.secondary)
-                    Text("QuotaBar").fontWeight(.semibold)
-                    Spacer(minLength: 2)
-                    Text(period.title).foregroundStyle(.secondary)
-                }.font(.system(size: 11))
-            }
+            HStack(spacing: 4) {
+                Image(systemName: "chart.xyaxis.line").foregroundStyle(.secondary)
+                Text("QuotaBar").fontWeight(.semibold)
+                Spacer(minLength: 2)
+                Text(period.title).foregroundStyle(.secondary)
+            }.font(.system(size: 11))
 
             if snapshot == nil {
                 Spacer(minLength: 0)

@@ -2,23 +2,17 @@
 
 原生 macOS 菜单栏用量看板，显示 Claude / Codex 的具体 Token 数和订阅额度。Swift + SwiftUI + AppKit，macOS 14 或更高版本，无第三方依赖。
 
-0.8.0：提供无需 Apple 开发者证书的**桌面浮窗**，直接使用主应用内存中的实时统计。支持拖动、位置记忆、置顶、小号／中号趋势布局、统计范围切换、输入／输出与 USD 参考费用。菜单栏右键可显示／隐藏，设置中也有开关。该浮窗是普通 AppKit 窗口，不属于系统“编辑小组件”的 WidgetKit 列表。
-
-当前本机推荐使用 `bash scripts/build-app.sh` 构建浮窗版，或运行 `~/Applications/QuotaBar.app`。启动后默认显示浮窗；点标题打开用量明细，右上角菜单切换范围和布局。保持应用运行即可按原有每分钟扫描更新。浮窗不依赖 App Group，也不需要登录 Xcode。
-
-已确认旧系统原生扩展因缺少 Team ID 被 macOS 拒绝读取共享文件。本机已将 `dev.quotabar.mac.widgets` 设为忽略，停止错误重试；浮窗版安装包不嵌入该扩展。旧的灰色系统组件可手动从桌面移除。今后配置有效 Apple 签名并安装原生组件版后，可用 `pluginkit -e default -i dev.quotabar.mac.widgets` 恢复注册选择。
+0.9.0：恢复真正的 **WidgetKit 桌面／通知中心小组件**，移除 AppKit 桌面浮窗。主应用通过仅监听 `127.0.0.1` 的只读接口提供统计；组件不再访问 App Group，因此本机版本使用临时签名即可构建，不需要 Apple ID、开发者证书或修改系统安全设置。提供今日、近 7 天、近 30 天三个组件，每个都有小号／中号，默认显示输入、输出、USD 参考费用；中号还显示近 7 天趋势。
 
 ```sh
-# 安装可直接使用的桌面浮窗版，输出到本机非同步目录
-QUOTABAR_APP_OUTPUT="$HOME/Applications/QuotaBar.app" bash scripts/build-app.sh
-open "$HOME/Applications/QuotaBar.app" --args --replace --desktop-widget
-
-# 自检真实用量、窗口显示；演示模式还验证隐藏/显示、置顶、尺寸与画面更新
-"$HOME/Applications/QuotaBar.app/Contents/MacOS/QuotaBar" --inspect-desktop
-"$HOME/Applications/QuotaBar.app/Contents/MacOS/QuotaBar" --demo --inspect-desktop
+# 输出到非同步目录，避免文件同步服务改变已签名的 bundle 元数据
+QUOTABAR_APP_OUTPUT="$HOME/Applications/QuotaBar.app" bash scripts/build-widget-app.sh
+open "$HOME/Applications/QuotaBar.app" --args --replace --show
 ```
 
-0.7.0：卡片增加输入／输出 Token 合计及各自的 API 参考费用，展开明细可见普通输入、输出、缓存读取和缓存写入的具体数量与已定价费用；每个模型也有输入／输出分项。趋势图支持总计、仅输入、仅输出三种指标。小／中号组件在编辑时开启「显示输入／输出」，即可切换为两类数量与费用。59 项测试通过。
+保持 QuotaBar 在菜单栏运行，然后右键桌面 → 编辑小组件 → 搜索 QuotaBar。若已添加旧版灰色组件，请移除后重新添加。没有浮窗设置，也无需登录 Xcode。
+
+0.7.0：卡片增加输入／输出 Token 合计及各自的 API 参考费用，展开明细可见普通输入、输出、缓存读取和缓存写入的具体数量与已定价费用；每个模型也有输入／输出分项。趋势图支持总计、仅输入、仅输出三种指标。0.9.0 的小／中号组件默认显示两类数量与费用。59 项测试通过。
 
 输入合计 = 普通输入 + 缓存读取 + 缓存写入，输入费用也包含这三项；输出沿用已有输出计数，推理 Token 不重复添加。输入、输出合计与原总量保持一致，CSV 的 `input_tokens` 继续表示普通输入。两类费用各自跟踪未定价 Token，未知输入不会被展示为零费用，也不会使已知的输出费用变为未知。合计按未四舍五入的金额计算，分项显示可能与合计相差一美分。组件共享摘要升级为版本 3，旧摘要会等待主应用重新同步。
 
@@ -34,37 +28,29 @@ Claude 缓存写入优先读取日志中 5 分钟／1 小时的分类，已知�
 
 0.5.0：增加原生 WidgetKit 桌面／通知中心小组件，包含小号用量卡片和中号用量＋近 7 天折线图。可在编辑小组件时选择今日、近 7 天或近 30 天；点击打开主应用的对应统计范围。新增 Xcode 工程与组件构建脚本，41 项测试通过。
 
-**系统原生组件的验收边界：** 扩展曾构建、注册并在系统 WidgetKit Simulator 中加载；小、中尺寸布局已渲染检查。本机没有 Apple 开发者签名证书，系统实际拒绝临时签名扩展读取 App Group 文件，因此原生 WidgetKit 预览包未通过端到端验收。0.8.0 的桌面浮窗使用独立的数据路径，不受该限制。
-
 ## macOS 小组件
 
-主应用每分钟扫描本机日志，向 App Group 原子写入摘要；只包含服务名、总 Token、每日数值、API 折合摘要、日期与可用额度百分比，不包含登录令牌、请求 ID、日志路径、模型名或对话内容。组件不扫描日志、不读取凭据、不请求服务商。主应用保持运行时定期请求组件重载；组件请求约 15 分钟后刷新，具体时间由 macOS 决定。跨天后旧的相对时间统计隐藏并提示待更新，过期摘要保留上次更新时间。
+主应用每分钟扫描本机日志，通过 Network.framework 仅监听 IPv4 回环地址 `127.0.0.1`，不接受局域网访问。唯一接口 `GET /v1/summary` 返回服务名、输入／输出 Token、每日总量、API 折合摘要、日期与可用额度百分比；不包含服务商登录令牌、请求 ID、日志路径、模型名或对话内容。组件不扫描日志、不读取服务商凭据、不请求云端服务。
 
-完成签名后，将包含扩展的应用移入「应用程序」并至少打开一次，再右键桌面 → 编辑小组件 → 搜索 QuotaBar。选择小号或中号添加；右键组件 → 编辑可切换统计范围。设置里的「同步统计摘要」可写入最新数据并请求重载。
+构建脚本为安装包生成随机 256 位本机访问令牌与可用端口，并在签名前写入主应用和扩展。它们只存在于构建产物，不提交源码，也不输出日志。接口拒绝未认证请求、写操作、未知路径、浏览器 Origin、重复头与请求体，限制请求大小和连接数。组件使用临时 URLSession，关闭代理、Cookie、凭据缓存及重定向，并限制响应大小。该令牌用于区分本机请求，不构成对同一用户其他本机进程的安全隔离。
 
-```sh
-# 显式选择无 Apple 签名预览：仅用于编译与布局验证，不能正常读取共享统计
-QUOTABAR_ALLOW_UNSIGNED_WIDGET=1 bash scripts/build-widget-app.sh
-open dist/QuotaBar-Widgets.app
-```
+扩展保持 App Sandbox，只开启 `network.client`；成功读取后在扩展自己的容器中缓存汇总。主应用退出或暂时不可达时保留缓存，过期后标记更新时间；无缓存时显示「请打开 QuotaBar」。跨天后隐藏旧的相对时间合计，等待同步。组件请求约 15 分钟后刷新，具体调度由 macOS 决定，设置中可手动同步。
 
-原生组件脚本生成 `dist/QuotaBar-Widgets.app` 和通用架构 ZIP；未配置签名时默认拒绝构建，避免交付无法使用的组件包。Xcode 工程已提交，可直接打开 `QuotaBar.xcodeproj`；只有修改 `project.yml` 时才需要运行 `xcodegen generate`。
+原生构建脚本生成 `dist/QuotaBar-Widgets.app` 和通用架构 ZIP。脚本默认进行本机临时签名；可选 `QUOTABAR_SIGN_IDENTITY` 使用已有开发证书。本机运行不要求该变量。Xcode 工程已提交，修改 `project.yml` 后运行 `xcodegen generate`。构建脚本还会注入本机通信配置；直接点 Xcode Run 不会自动生成匹配的安装配置。
 
-运行时请将 ZIP 解压到本机非同步目录，例如 `~/Applications`。本项目所在 Documents 目录会被文件同步服务附加 Finder 元数据，实测会使嵌入扩展的严格签名校验失败；ZIP 中的干净构建已通过校验。也可设置 `QUOTABAR_APP_OUTPUT="$HOME/Applications/QuotaBar.app"`，让构建脚本直接输出到非同步目录。
-
-要启用共享数据，先在 Xcode → Settings → Accounts 登录 Apple ID，并在 Manage Certificates 中建立有效 Apple Development 或 Developer ID 签名证书。以下两个变量必须替换为实际证书名与实际 Team ID；macOS 专用 App Group 使用签名团队前缀，主应用与组件的值必须一致：
+建议安装到 `~/Applications/QuotaBar.app`。本项目 Documents 目录会被文件同步服务附加 Finder 元数据，可能使嵌入扩展的严格签名校验失败；脚本在临时目录签名，ZIP 保留干净构建。不要将源目录里的构建副本当成最终安装路径。
 
 ```sh
-QUOTABAR_SIGN_IDENTITY='实际的 Apple Development 或 Developer ID Application 证书名称' \
-QUOTABAR_APP_GROUP='实际TEAMID.dev.quotabar.shared' \
-bash scripts/build-widget-app.sh
+# 主应用必须已运行；只验证本机统计接口，不等同于系统组件宿主验收
+"$HOME/Applications/QuotaBar.app/Contents/MacOS/QuotaBar" --check-widget
+
+# 如之前曾将旧扩展设为忽略，可恢复系统默认选择
+pluginkit -e default -i dev.quotabar.mac.widgets
 ```
 
-脚本会验证签名团队与 App Group 前缀。若从 Xcode 构建，在两个应用目标使用同一团队及有效签名身份，并将 `QUOTABAR_APP_GROUP` 改为实际团队前缀。`group.` 前缀方案还涉及开发者后台 App Group 注册及 provisioning profile，当前脚本采用 macOS 团队前缀方式。
+本机验收：62 项测试通过（包含真实回环通信、错误访问令牌和未知摘要版本）；已安装的临时签名扩展由系统 chronod 启动，读取真实两家统计并成功生成中号时间线，扩展自身缓存也已写入。锁屏期间无法检查实际屏幕布局，普通应用内预览不作为系统宿主验收依据。旧方案被拒绝的是 App Group 共享文件访问，不能据此推断全部原生组件都必须有开发者证书。
 
-主应用 `--check-widget` 只验证应用端摘要读写；组件端仍需在系统 WidgetKit Simulator 或桌面验证，不能把该命令的成功视为跨进程读取成功。未配置签名时显示权限提示，不用演示数字替代真实统计。
-
-Apple 参考：[创建组件扩展](https://developer.apple.com/documentation/widgetkit/creating-a-widget-extension)、[App Group 容器与 macOS 签名条件](https://developer.apple.com/documentation/xcode/accessing-app-group-containers)、[组件时间线与刷新](https://developer.apple.com/documentation/widgetkit/timeline)。
+Apple 参考：[创建组件扩展](https://developer.apple.com/documentation/widgetkit/creating-a-widget-extension)、[StaticConfiguration](https://developer.apple.com/documentation/widgetkit/staticconfiguration)、[本机网络 ATS 配置](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking)、[组件时间线与刷新](https://developer.apple.com/documentation/widgetkit/timeline)。
 
 0.4.0：Token 页点击「趋势」查看 Claude / Codex 双折线，可切换总 Token 或仅输出，悬停显示相应时段的具体数量。今日按小时，7 / 30 天按天；全部历史超过一年时按月聚合。另含两家合计的时段平均值、峰值及输入／输出／缓存读／缓存写构成条。窗口保持 360 × 480，点击「概览」返回紧凑卡片。36 项测试通过，包含分时边界、补零、未来记录过滤、长历史聚合和图表与概览总量一致性。
 
@@ -93,7 +79,7 @@ Claude 流式日志按 message ID + request ID 去重并取最终计数，Codex 
 
 ## 开始使用
 
-本机已构建的应用位于 `dist/QuotaBar.app`，双击即可启动。菜单栏出现仪表图标，点击查看额度；右键可以刷新或退出。可将应用拖入「应用程序」后在设置中开启登录启动。
+原生小组件安装版位于 `~/Applications/QuotaBar.app`，双击即可启动。`bash scripts/build-app.sh` 仍可单独构建不带扩展的菜单栏版本。菜单栏出现仪表图标，点击查看额度；右键可以刷新或退出。可将应用拖入「应用程序」后在设置中开启登录启动。
 
 - **Codex**：自动发现本机 Codex CLI 并复用登录。找不到时，在设置里指定可执行文件路径。先在终端执行 `codex login` 完成订阅账号登录。
 - **Claude**：点击「连接 Claude」，复用 Claude Code 的登录状态。macOS 可能请求读取「Claude Code-credentials」钥匙串项目；允许后才能查询。若登录需要更新，点击「修复 Claude 登录…」，等待官方 CLI 的 `/usage` 面板出现，再回到 QuotaBar 刷新；只有 CLI 自己也无法续期时才需要 `/login`。首次可能提示信任应用自身的 Resources 目录，它只包含此应用的登录修复脚本。仅登录 Claude 桌面版还不够，需要 Claude Code 的订阅登录。

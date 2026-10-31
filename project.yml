@@ -10,7 +10,6 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
-    QUOTABAR_APP_GROUP: group.dev.quotabar.shared
     ENABLE_HARDENED_RUNTIME: YES
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 targets:
@@ -37,19 +36,16 @@ targets:
       path: Resources/App-Info.plist
       properties:
         CFBundleDisplayName: QuotaBar
-        CFBundleShortVersionString: "0.8.0"
-        CFBundleVersion: "11"
+        CFBundleShortVersionString: "0.9.0"
+        CFBundleVersion: "12"
         LSUIElement: true
         NSHighResolutionCapable: true
         NSPrincipalClass: NSApplication
-        QuotaBarAppGroup: $(QUOTABAR_APP_GROUP)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         CFBundleURLTypes:
           - CFBundleURLName: dev.quotabar.open
             CFBundleURLSchemes: [quotabar]
-    entitlements:
-      path: Resources/Signing/QuotaBar.entitlements
-      properties:
-        com.apple.security.application-groups: [$(QUOTABAR_APP_GROUP)]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.quotabar.mac
@@ -70,16 +66,17 @@ targets:
       path: Resources/Widget-Info.plist
       properties:
         CFBundleDisplayName: QuotaBar
-        CFBundleShortVersionString: "0.8.0"
-        CFBundleVersion: "11"
-        QuotaBarAppGroup: $(QUOTABAR_APP_GROUP)
+        CFBundleShortVersionString: "0.9.0"
+        CFBundleVersion: "12"
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: Resources/Signing/QuotaBarWidgets.entitlements
       properties:
         com.apple.security.app-sandbox: true
-        com.apple.security.application-groups: [$(QUOTABAR_APP_GROUP)]
+        com.apple.security.network.client: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.quotabar.mac.widgets

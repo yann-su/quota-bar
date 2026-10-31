@@ -8,30 +8,32 @@ STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/quotabar-widget-build.XXXXXX")"
 trap 'rm -rf "$STAGING_DIR"' EXIT
 DERIVED_DATA="${QUOTABAR_DERIVED_DATA:-${TMPDIR:-/tmp}/quotabar-widget-derived}"
 SIGN_IDENTITY="${QUOTABAR_SIGN_IDENTITY:--}"
-APP_GROUP="${QUOTABAR_APP_GROUP:-group.dev.quotabar.shared}"
-if [[ "$SIGN_IDENTITY" == "-" && "${QUOTABAR_ALLOW_UNSIGNED_WIDGET:-0}" != "1" ]]; then
-    echo 'Native WidgetKit requires an Apple signing team. For the usable desktop panel, run: bash scripts/build-app.sh' >&2
-    echo 'To explicitly compile an unsigned layout preview only, set QUOTABAR_ALLOW_UNSIGNED_WIDGET=1.' >&2
-    exit 2
-fi
-if [[ "$SIGN_IDENTITY" != "-" && -z "${QUOTABAR_APP_GROUP:-}" ]]; then
-    echo 'Set QUOTABAR_APP_GROUP to your actual TEAM_ID.dev.quotabar.shared for macOS signing.' >&2
-    exit 1
-fi
 BUILD_LOG="$STAGING_DIR/build.log"
 if ! xcodebuild -project QuotaBar.xcodeproj -scheme QuotaBar -configuration Release \
     -derivedDataPath "$DERIVED_DATA" CODE_SIGNING_ALLOWED=NO \
-    "QUOTABAR_APP_GROUP=$APP_GROUP" build > "$BUILD_LOG" 2>&1; then
-    tail -80 "$BUILD_LOG"
+    build > "$BUILD_LOG" 2>&1; then
+    rg -n -C 3 "error:|BUILD FAILED" "$BUILD_LOG" | head -65
     exit 1
 fi
 APP="$STAGING_DIR/QuotaBar.app"
 ditto --norsrc "$DERIVED_DATA/Build/Products/Release/QuotaBar.app" "$APP"
 chmod +x "$APP/Contents/Resources/RepairClaude.command"
-for TARGET in QuotaBar QuotaBarWidgets; do
-    cp "Resources/Signing/$TARGET.entitlements" "$STAGING_DIR/$TARGET.entitlements"
-    /usr/libexec/PlistBuddy -c "Set :com.apple.security.application-groups:0 $APP_GROUP" "$STAGING_DIR/$TARGET.entitlements"
-done
+# A per-installation bearer credential and an unused loopback port. These are
+# embedded only in built bundles and never printed or committed.
+python3 - "$APP" <<'PYCONFIG'
+import plistlib, secrets, socket, sys
+from pathlib import Path
+app = Path(sys.argv[1])
+with socket.socket() as sock:
+    sock.bind(('127.0.0.1', 0))
+    port = sock.getsockname()[1]
+token = secrets.token_hex(32)
+for path in [app/'Contents/Info.plist', app/'Contents/PlugIns/QuotaBarWidgets.appex/Contents/Info.plist']:
+    data = plistlib.loads(path.read_bytes())
+    data['QuotaBarLocalPort'] = port
+    data['QuotaBarLocalToken'] = token
+    path.write_bytes(plistlib.dumps(data))
+PYCONFIG
 sign_bundle() {
     if [[ "$SIGN_IDENTITY" == "-" ]]; then
         codesign --force --sign - --entitlements "$1" "$2"
@@ -39,21 +41,26 @@ sign_bundle() {
         codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp --entitlements "$1" "$2"
     fi
 }
-sign_bundle "$STAGING_DIR/QuotaBarWidgets.entitlements" "$APP/Contents/PlugIns/QuotaBarWidgets.appex"
-sign_bundle "$STAGING_DIR/QuotaBar.entitlements" "$APP"
-if [[ "$SIGN_IDENTITY" != "-" ]]; then
-    TEAM_ID="$(codesign -dv "$APP" 2>&1 | sed -n 's/^TeamIdentifier=//p')"
-    if [[ -z "$TEAM_ID" || "$TEAM_ID" == "not set" || "$APP_GROUP" != "$TEAM_ID".* ]]; then
-        echo 'The macOS App Group must start with the actual signing Team ID.' >&2
-        exit 1
-    fi
-fi
+sign_bundle "Resources/Signing/QuotaBarWidgets.entitlements" "$APP/Contents/PlugIns/QuotaBarWidgets.appex"
+sign_bundle "Resources/Signing/QuotaBar.entitlements" "$APP"
 codesign --verify --deep --strict "$APP"
 mkdir -p "$PROJECT_DIR/dist"
 # Preserve the separately built menu-only app; the widget build is explicit.
 APP_OUTPUT="${QUOTABAR_APP_OUTPUT:-$PROJECT_DIR/dist/QuotaBar-Widgets.app}"
+if [[ "$APP_OUTPUT" != *.app ]]; then echo 'APP_OUTPUT must end in .app' >&2; exit 1; fi
 mkdir -p "$(dirname "$APP_OUTPUT")"
-ditto --norsrc "$APP" "$APP_OUTPUT"
+PREVIOUS_APP="$STAGING_DIR/previous-QuotaBar.app"
+if [[ -e "$APP_OUTPUT" ]]; then
+    EXISTING_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_OUTPUT/Contents/Info.plist" 2>/dev/null || true)"
+    if [[ "$EXISTING_ID" != "dev.quotabar.mac" ]]; then echo 'Refusing to replace a different application.' >&2; exit 1; fi
+    mv "$APP_OUTPUT" "$PREVIOUS_APP"
+fi
+if ! ditto --norsrc "$APP" "$APP_OUTPUT"; then
+    rm -rf "$APP_OUTPUT"
+    if [[ -d "$PREVIOUS_APP" ]]; then mv "$PREVIOUS_APP" "$APP_OUTPUT"; fi
+    exit 1
+fi
+codesign --verify --deep --strict "$APP_OUTPUT"
 ARCHITECTURES="$(lipo -archs "$APP/Contents/MacOS/QuotaBar")"
 if [[ "$ARCHITECTURES" == *" "* ]]; then ARCHITECTURES=universal; fi
 ARCHIVE="$PROJECT_DIR/dist/QuotaBar-Widgets-macOS-$ARCHITECTURES.zip"
@@ -61,5 +68,5 @@ ditto -c -k --norsrc --keepParent "$APP" "$ARCHIVE"
 echo "Built: $APP_OUTPUT"
 echo "Archive: $ARCHIVE"
 if [[ "$SIGN_IDENTITY" == "-" ]]; then
-    echo "Local ad-hoc build: compile and layout preview only; macOS may deny widget App Group access."
+    echo "Local ad-hoc build: native WidgetKit with read-only loopback transport, no App Group."
 fi

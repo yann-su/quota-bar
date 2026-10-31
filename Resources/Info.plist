@@ -1,19 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-    <key>CFBundleName</key><string>QuotaBar</string>
-    <key>CFBundleDisplayName</key><string>QuotaBar</string>
-    <key>CFBundleIdentifier</key><string>dev.quotabar.mac</string>
-    <key>CFBundleExecutable</key><string>QuotaBar</string>
-    <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>0.8.0</string>
-    <key>CFBundleVersion</key><string>11</string>
-    <key>CFBundleURLTypes</key><array><dict>
-        <key>CFBundleURLName</key><string>dev.quotabar.open</string>
-        <key>CFBundleURLSchemes</key><array><string>quotabar</string></array>
-    </dict></array>
-    <key>LSMinimumSystemVersion</key><string>14.0</string>
-    <key>LSUIElement</key><true/>
-    <key>NSHighResolutionCapable</key><true/>
-    <key>NSPrincipalClass</key><string>NSApplication</string>
-</dict></plist>
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>QuotaBar</string>
+	<key>CFBundleExecutable</key>
+	<string>QuotaBar</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.quotabar.mac</string>
+	<key>CFBundleName</key>
+	<string>QuotaBar</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.9.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>dev.quotabar.open</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>quotabar</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>12</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
+</plist>

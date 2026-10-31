@@ -1,34 +1,26 @@
 import Foundation
 import WidgetKit
 import QuotaCore
-import Security
 
 @MainActor
 final class WidgetPublisher {
-    static var hasSigningTeam: Bool {
-        var code: SecCode?
-        var staticCode: SecStaticCode?
-        var information: CFDictionary?
-        guard SecCodeCopySelf(SecCSFlags(), &code) == errSecSuccess, let code,
-              SecCodeCopyStaticCode(code, SecCSFlags(), &staticCode) == errSecSuccess, let staticCode,
-              SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation), &information) == errSecSuccess,
-              let team = (information as? [String: Any])?[kSecCodeInfoTeamIdentifier as String] as? String else { return false }
-        return !team.isEmpty
-    }
+    private var server: WidgetLocalServer?
     private var lastReload = Date.distantPast
     private var lastDay: Date?
+    var status: String { server?.status ?? "请安装包含原生小组件的版本。" }
+    init() {
+        guard let endpoint = WidgetLocalEndpoint.configured else { return }
+        let server = WidgetLocalServer(endpoint: endpoint)
+        do { try server.start(); self.server = server } catch { return }
+    }
     func publish(report: TokenReport, quotas: [UsageSnapshot], forceReload: Bool = false) -> Bool {
-        // Do not keep asking WidgetKit to reload an extension that the system
-        // cannot authorize. The in-process desktop panel remains independent.
-        guard Self.hasSigningTeam, let directory = WidgetSharedContainer.directory else { return false }
+        guard let server else { return false }
         let snapshot = WidgetSnapshot(report: report, quotas: quotas)
-        do { try WidgetSnapshotFile.write(snapshot, directory: directory) }
-        catch { return false }
-        // The system owns widget refresh scheduling. Keep fresh shared data, but
-        // avoid spending the widget reload budget on every one-minute scan.
+        guard let data = try? JSONEncoder().encode(snapshot) else { return false }
+        server.update(data)
         let elapsed = Date().timeIntervalSince(lastReload)
         if elapsed >= 15 * 60 || (forceReload && elapsed >= 5) || lastDay != snapshot.dayStart {
-            WidgetCenter.shared.reloadTimelines(ofKind: WidgetSharedContainer.kind)
+            for kind in WidgetKinds.all { WidgetCenter.shared.reloadTimelines(ofKind: kind) }
             lastReload = Date(); lastDay = snapshot.dayStart
         }
         return true

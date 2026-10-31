@@ -37,16 +37,15 @@ enum QuotaBarMain {
         }
         if CommandLine.arguments.contains("--check-widget") {
             Task { @MainActor in
-                guard WidgetPublisher.hasSigningTeam else {
-                    print("Native WidgetKit: unavailable; no Apple signing team. Use the desktop panel (--desktop-widget).")
-                    exit(2)
+                guard let endpoint = WidgetLocalEndpoint.configured else {
+                    print("Native widget endpoint is not configured in this bundle."); exit(2)
                 }
-                let report = await LocalTokenScanner(roots: LocalTokenSources.roots).scan()
-                let published = WidgetPublisher().publish(report: report, quotas: []) && WidgetSharedContainer.read() != nil
-                print("Host widget summary: \(published ? "written and read back" : "unavailable; check App Group and signing")")
-                print("This checks host access only. Verify extension access in WidgetKit Simulator or on the desktop.")
-                print("Payload: aggregate token counts, reference USD and dates; no credentials or conversations.")
-                exit(published ? 0 : 1)
+                do {
+                    let snapshot = try await WidgetLocalClient.fetch(endpoint)
+                    print("Local bridge: received version \(snapshot.version), \(snapshot.providers.count) providers.")
+                    print("Verify extension access separately in the actual WidgetKit host.")
+                    exit(0)
+                } catch { print("Local bridge unavailable: keep the installed QuotaBar app running."); exit(1) }
             }
             dispatchMain()
         }
@@ -112,7 +111,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var localMonitor: Any?
     private var globalMonitor: Any?
     private var pinned = false
-    private var desktopWidget: DesktopWidgetController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let demo = CommandLine.arguments.contains("--demo")
@@ -138,18 +136,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.delegate = self
         updateContent()
-        let args = CommandLine.arguments
-        let desktopMode = args.contains("--desktop-widget") || args.contains("--inspect-desktop") || args.contains("--snapshot-desktop")
-        if desktopMode { store.desktopWidgetEnabled = true }
-        if args.contains("--desktop-small") { store.desktopWidgetMedium = false }
-        if args.contains("--desktop-medium") { store.desktopWidgetMedium = true }
-        let preview = args.contains("--snapshot") || args.contains("--widget-preview-small") || args.contains("--widget-preview-medium") || args.contains("--inspect-scroll")
-        desktopWidget = DesktopWidgetController(store: store, suppressed: (demo || preview) && !desktopMode) { [weak self] in
-            guard let self else { return }
-            self.store.selectedTokenPeriod = self.store.desktopWidgetPeriod.tokenPeriod
-            self.store.widgetOpenRequest = UUID()
-            self.showPanel()
-        }
         let widgetPreview = CommandLine.arguments.contains("--widget-preview-small") || CommandLine.arguments.contains("--widget-preview-medium")
         if widgetPreview {
             let small = CommandLine.arguments.contains("--widget-preview-small")
@@ -175,17 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self, !self.pinned else { return }; self.panel.orderOut(nil)
         }
-        if (demo && !desktopMode) || CommandLine.arguments.contains("--show") { showPanel() }
-        if let index = args.firstIndex(of: "--snapshot-desktop"), args.count > index + 1 {
-            let path = args[index + 1]
-            DispatchQueue.main.asyncAfter(deadline: .now() + (demo ? 1 : 3)) { [weak self] in
-                guard self?.desktopWidget?.saveSnapshot(path: path) != nil else { exit(1) }
-                NSApp.terminate(nil)
-            }
-        }
-        if args.contains("--inspect-desktop") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.inspectDesktop() }
-        }
+        if demo || CommandLine.arguments.contains("--show") { showPanel() }
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot"), CommandLine.arguments.count > index + 1 {
             let path = CommandLine.arguments[index + 1]
             // Render this app's own view, never capture another application's screen.
@@ -220,7 +196,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func togglePanel() {
         if NSApp.currentEvent?.type == .rightMouseUp {
             let menu = NSMenu()
-            menu.addItem(withTitle: store.desktopWidgetEnabled ? "隐藏桌面浮窗" : "显示桌面浮窗", action: #selector(toggleDesktopWidget), keyEquivalent: "").target = self
             menu.addItem(withTitle: "刷新额度", action: #selector(refresh), keyEquivalent: "r").target = self
             menu.addItem(.separator())
             menu.addItem(withTitle: "退出 QuotaBar", action: #selector(quit), keyEquivalent: "q").target = self
@@ -232,7 +207,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if panel.isVisible { panel.orderOut(nil) } else { showPanel() }
     }
     @objc private func refresh() { store.refreshAll(force: true) }
-    @objc private func toggleDesktopWidget() { store.desktopWidgetEnabled.toggle() }
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func showPanel() {
@@ -254,47 +228,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { return }
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         if let png = bitmap.representation(using: .png, properties: [:]) { try? png.write(to: URL(fileURLWithPath: path)) }
-    }
-
-    private func inspectDesktop() {
-        guard let desktopWidget, desktopWidget.panel.isVisible, let before = store.widgetSnapshot,
-              let report = store.tokenReport else { print("Desktop panel or live data unavailable"); exit(1) }
-        var checked = 0
-        for provider in Provider.allCases {
-            let coverage = report.coverage[provider] ?? TokenCoverage()
-            guard coverage.directoryFound else { continue }
-            checked += 1
-            let totals = report.totals(provider: provider, period: store.desktopWidgetPeriod.tokenPeriod, now: before.generatedAt)
-            guard before.providers.first(where: { $0.provider == provider })?.total(for: store.desktopWidgetPeriod) == totals.total else { exit(1) }
-        }
-        guard checked > 0 else { print("No local usage source available for desktop validation"); exit(1) }
-        print("Desktop panel visible=true size=\(desktopWidget.panel.frame.size) pinned=\(store.desktopWidgetPinned); live summary matches scanned usage.")
-        guard store.isDemo else { NSApp.terminate(nil); return }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("quotabar-desktop-before-\(UUID().uuidString).png")
-        let beforeImage = desktopWidget.saveSnapshot(path: url.path)
-        try? FileManager.default.removeItem(at: url)
-        store.desktopWidgetEnabled = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
-            guard let self, !desktopWidget.panel.isVisible else { exit(1) }
-            self.store.desktopWidgetEnabled = true
-            self.store.desktopWidgetPinned.toggle()
-            self.store.desktopWidgetMedium.toggle()
-            var changed = report
-            changed.records.append(TokenRecord(id: "desktop-validation", provider: .claude, timestamp: Date(), model: "claude-opus-5-5",
-                counts: TokenCounts(input: 1_000_000, output: 100_000)))
-            self.store.tokenReport = changed
-            self.store.publishWidget()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                guard desktopWidget.panel.isVisible,
-                      desktopWidget.panel.level == (self.store.desktopWidgetPinned ? .floating : .normal),
-                      desktopWidget.panel.frame.width == (self.store.desktopWidgetMedium ? 360 : 232),
-                      self.store.widgetSnapshot != before,
-                      let afterImage = desktopWidget.saveSnapshot(path: url.path), let beforeImage, afterImage != beforeImage else { exit(1) }
-                try? FileManager.default.removeItem(at: url)
-                print("Desktop hide/show, pin, resize and rendered live-data update passed; no shared container required.")
-                NSApp.terminate(nil)
-            }
-        }
     }
 
     private func inspectScrollViews(afterScrolling: Bool) {
