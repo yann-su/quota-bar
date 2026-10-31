@@ -16,6 +16,7 @@
 		398C9DDDBB4BFB1EEDA70938 /* RepairClaude.command in Resources */ = {isa = PBXBuildFile; fileRef = 8A2194E8675609BE47A86C34 /* RepairClaude.command */; };
 		40051C5B7CF0C34215B0B5C7 /* QuotaBarWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E138A76EE03F9746E232875A /* QuotaBarWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4104ABD2E986B28517164E55 /* WidgetLargeContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF5B00D9A8385012A3F03F /* WidgetLargeContentView.swift */; };
+		49B921D331B8B045F1D4316B /* TokenChartStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB90B9B19000AA97460F864 /* TokenChartStyle.swift */; };
 		52563DE19E63128AD88E5D26 /* WidgetLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726D5D052F61A2F18A1F179B /* WidgetLocalClient.swift */; };
 		62D909FB0FAF74290231A515 /* QuotaWindowsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE558ABF0D0B0A8D5AE05E6 /* QuotaWindowsView.swift */; };
 		662236746A1509A0EA82ED6A /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 15E7A9851FE2929B25A439C5 /* AppIcon.icns */; };
@@ -24,6 +25,7 @@
 		6E9975AE8A1BAE3FCB9C1371 /* QuotaBarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DDDC296625F2B3FB996B43 /* QuotaBarWidget.swift */; };
 		75C60993A8E03D24BCB62124 /* Usage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62743CD95409A46538E88B6A /* Usage.swift */; };
 		7C848E4EA179831847A392E7 /* TokenTrend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC53B9F5CBE98D8DFAB2850C /* TokenTrend.swift */; };
+		81C036EABC4560650D2310B3 /* TokenChartStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB90B9B19000AA97460F864 /* TokenChartStyle.swift */; };
 		907EFA0E7DE19D66750F939D /* TokenLogReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */; };
 		9471AC18898C33BC449B22E1 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AB3C320BE59FBC33517DAB /* App.swift */; };
 		9B4549C5FB84A5E9672F057A /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
@@ -115,6 +117,7 @@
 		D2FF2BC8BF5C72FE5E25D27C /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenPricing.swift; sourceTree = "<group>"; };
 		E138A76EE03F9746E232875A /* QuotaBarWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuotaBarWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDB90B9B19000AA97460F864 /* TokenChartStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenChartStyle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				4AE558ABF0D0B0A8D5AE05E6 /* QuotaWindowsView.swift */,
+				EDB90B9B19000AA97460F864 /* TokenChartStyle.swift */,
 				AED391FA878436231BD3552A /* WidgetContentView.swift */,
 				47BF5B00D9A8385012A3F03F /* WidgetLargeContentView.swift */,
 				726D5D052F61A2F18A1F179B /* WidgetLocalClient.swift */,
@@ -369,6 +373,7 @@
 			files = (
 				6E9975AE8A1BAE3FCB9C1371 /* QuotaBarWidget.swift in Sources */,
 				D3F35C567E0E0A1356E60EE8 /* QuotaWindowsView.swift in Sources */,
+				49B921D331B8B045F1D4316B /* TokenChartStyle.swift in Sources */,
 				AA2FB483DCBF9CBAD1FB1656 /* WidgetContentView.swift in Sources */,
 				4104ABD2E986B28517164E55 /* WidgetLargeContentView.swift in Sources */,
 				52563DE19E63128AD88E5D26 /* WidgetLocalClient.swift in Sources */,
@@ -386,6 +391,7 @@
 				A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */,
 				A711C6BB1C253DE0B2F9969A /* PricingInfoView.swift in Sources */,
 				62D909FB0FAF74290231A515 /* QuotaWindowsView.swift in Sources */,
+				81C036EABC4560650D2310B3 /* TokenChartStyle.swift in Sources */,
 				B652F103D2D7F9D1EBAC089D /* TokenDashboard.swift in Sources */,
 				CBC3F00AC349C25FE91C9487 /* TokenTrendPanel.swift in Sources */,
 				A256D7E65990E1B238DFBC2E /* UsageClients.swift in Sources */,

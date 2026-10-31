@@ -68,7 +68,7 @@ struct WidgetContentView: View {
         let split = currentDay ? value?.split(for: period) : nil
         return VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
-                Circle().fill(tint(provider)).frame(width: 5, height: 5)
+                TokenSeriesSwatch(provider: provider)
                 Text(provider == .claude ? "Claude" : "Codex")
                 if value?.partial == true { Image(systemName: "exclamationmark.circle") }
                 Spacer(minLength: 2)
@@ -113,16 +113,21 @@ struct WidgetContentView: View {
 
     private var trend: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("每日总量 · 近 7 天").font(.system(size: 9)).foregroundStyle(.secondary)
+            Text("近 7 天 · 每日 Token").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
             Chart {
                 ForEach(snapshot?.providers ?? [], id: \.provider) { item in
                     ForEach(item.daily) { sample in
                         LineMark(x: .value("日期", sample.date), y: .value("Token", sample.tokens),
                                  series: .value("服务", item.provider.rawValue))
-                            .foregroundStyle(tint(item.provider)).lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                            .foregroundStyle(TokenChartStyle.color(item.provider)).lineStyle(TokenChartStyle.stroke(item.provider))
+                        PointMark(x: .value("日期", sample.date), y: .value("Token", sample.tokens))
+                            .foregroundStyle(TokenChartStyle.color(item.provider))
+                            .symbol(item.provider == .claude ? .circle : .diamond)
+                            .symbolSize(sample.id == item.daily.last?.id ? 26 : 10)
                     }
                 }
             }.chartXAxis(.hidden).chartYAxis(.hidden).chartYScale(domain: .automatic(includesZero: true))
+                .chartXScale(range: .plotDimension(startPadding: 4, endPadding: 4))
                 .frame(height: 61)
             HStack {
                 if let first = snapshot?.providers.first?.daily.first {
@@ -132,7 +137,7 @@ struct WidgetContentView: View {
                 if let last = snapshot?.providers.first?.daily.last {
                     Text(last.date, format: .dateTime.month(.twoDigits).day(.twoDigits))
                 }
-            }.font(.system(size: 8)).foregroundStyle(.tertiary)
+            }.font(.system(size: 10)).foregroundStyle(.secondary)
         }.accessibilityLabel("近七天 Claude 与 Codex 每日 Token 趋势；没有本机记录的日期显示为零。")
     }
 }

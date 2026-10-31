@@ -120,13 +120,18 @@ struct WidgetLargeContentView: View {
     private var trend: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("每日总量 · 近 7 天").font(.system(size: 11, weight: .medium))
-                Spacer()
+                Text("今日").font(.system(size: 11, weight: .semibold))
+                Spacer(minLength: 4)
                 ForEach(Provider.allCases) { provider in
+                    let sample = snapshot?.providers.first { $0.provider == provider }?.daily.last
                     HStack(spacing: 3) {
-                        Circle().fill(tint(provider)).frame(width: 4, height: 4)
-                        Text(provider == .claude ? "Claude" : "Codex")
-                    }.font(.system(size: 9)).foregroundStyle(.secondary)
+                        TokenSeriesSwatch(provider: provider)
+                        Text(provider.title).font(.system(size: wide ? 11 : 10)).foregroundStyle(.secondary)
+                        Text(currentDay ? sample.map { TokenChartStyle.label($0.tokens) } ?? "—" : "—")
+                            .font(.system(size: wide ? 12 : 11, weight: .semibold))
+                            .monospacedDigit().lineLimit(1).minimumScaleFactor(0.9)
+                    }.accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(provider.title)今日\(currentDay ? sample.map { "\($0.tokens)个 Token" } ?? "待同步" : "待同步")")
                 }
             }
             Chart {
@@ -134,34 +139,39 @@ struct WidgetLargeContentView: View {
                     ForEach(item.daily) { sample in
                         LineMark(x: .value("日期", sample.date), y: .value("Token", sample.tokens),
                                  series: .value("服务", item.provider.rawValue))
-                            .foregroundStyle(tint(item.provider))
-                            .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                            .foregroundStyle(TokenChartStyle.color(item.provider))
+                            .lineStyle(TokenChartStyle.stroke(item.provider))
+                        PointMark(x: .value("日期", sample.date), y: .value("Token", sample.tokens))
+                            .foregroundStyle(TokenChartStyle.color(item.provider))
+                            .symbol(item.provider == .claude ? .circle : .diamond)
+                            .symbolSize(sample.id == item.daily.last?.id ? 32 : 16)
                     }
                 }
             }
             .chartLegend(.hidden)
             .chartYScale(domain: .automatic(includesZero: true))
+            .chartXScale(range: .plotDimension(startPadding: 4, endPadding: 4))
             .chartXAxis {
                 AxisMarks(values: trendDates) { value in
                     AxisValueLabel(format: .dateTime.month(.twoDigits).day(.twoDigits), centered: false,
                                    anchor: value.index == 0 ? .topLeading : value.index == 2 ? .topTrailing : .top,
                                    collisionResolution: .disabled)
-                        .font(.system(size: 9))
+                        .font(.system(size: 10, weight: .medium)).foregroundStyle(TokenChartStyle.axisColor)
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in
-                    AxisGridLine().foregroundStyle(.secondary.opacity(0.13))
+                    AxisGridLine().foregroundStyle(TokenChartStyle.gridColor)
                     AxisValueLabel {
-                        if let count = value.as(Int64.self) {
-                            Text(TokenDisplayValue.format(count).text).font(.system(size: 9))
+                        if let count = value.as(Double.self) {
+                            Text(TokenChartStyle.axisLabel(count)).font(.system(size: 10, weight: .medium)).foregroundStyle(TokenChartStyle.axisColor)
                         }
                     }
                 }
             }
             .frame(minHeight: wide ? 105 : 50)
-        }.accessibilityElement(children: .ignore)
-            .accessibilityLabel("近七天 Claude 与 Codex 每日 Token 趋势；没有本机记录的日期显示为零。")
+        }.accessibilityElement(children: .combine)
+            .accessibilityLabel("近七天每日 Token 趋势，Claude 为实线圆点，Codex 为虚线菱形；没有本机记录的日期显示为零。")
     }
 
     private var trendDates: [Date] {

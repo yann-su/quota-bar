@@ -41,8 +41,8 @@ targets:
       properties:
         CFBundleDisplayName: QuotaBar
         CFBundleIconFile: AppIcon
-        CFBundleShortVersionString: "0.13.0"
-        CFBundleVersion: "18"
+        CFBundleShortVersionString: "0.13.1"
+        CFBundleVersion: "19"
         LSUIElement: true
         NSHighResolutionCapable: true
         NSPrincipalClass: NSApplication
@@ -74,8 +74,8 @@ targets:
       properties:
         CFBundleDisplayName: QuotaBar
         CFBundleIconFile: AppIcon
-        CFBundleShortVersionString: "0.13.0"
-        CFBundleVersion: "18"
+        CFBundleShortVersionString: "0.13.1"
+        CFBundleVersion: "19"
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         NSExtension:
