@@ -30,14 +30,19 @@ targets:
     sources:
       - Sources/QuotaBar
       - Widgets/Shared
+      - path: Resources/AppIcon.icns
+        buildPhase: resources
+      - path: Resources/MenuBarTemplate.pdf
+        buildPhase: resources
       - path: Resources/RepairClaude.command
         buildPhase: resources
     info:
       path: Resources/App-Info.plist
       properties:
         CFBundleDisplayName: QuotaBar
-        CFBundleShortVersionString: "0.10.0"
-        CFBundleVersion: "13"
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: "0.11.0"
+        CFBundleVersion: "14"
         LSUIElement: true
         NSHighResolutionCapable: true
         NSPrincipalClass: NSApplication
@@ -62,12 +67,15 @@ targets:
     sources:
       - Widgets/Extension
       - Widgets/Shared
+      - path: Resources/AppIcon.icns
+        buildPhase: resources
     info:
       path: Resources/Widget-Info.plist
       properties:
         CFBundleDisplayName: QuotaBar
-        CFBundleShortVersionString: "0.10.0"
-        CFBundleVersion: "13"
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: "0.11.0"
+        CFBundleVersion: "14"
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         NSExtension:

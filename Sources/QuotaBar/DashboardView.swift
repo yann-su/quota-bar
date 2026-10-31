@@ -57,10 +57,7 @@ struct DashboardView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8).fill(Palette.codex.opacity(0.13)).frame(width: 27, height: 27)
-                Image(systemName: "gauge.with.dots.needle.50percent").font(.system(size: 16)).foregroundStyle(Palette.codex)
-            }
+            Image(nsImage: NSApp.applicationIconImage).resizable().interpolation(.high).frame(width: 30, height: 30)
             Text("QuotaBar").font(.system(size: 15, weight: .bold, design: .rounded))
             Spacer()
             Button(action: togglePin) { Image(systemName: isPinned ? "pin.fill" : "pin") }
@@ -149,7 +146,7 @@ struct DashboardView: View {
                 }
             }
             if let message = store.settingsMessage { Text(message).font(.caption).foregroundStyle(.orange) }
-            Text("QuotaBar 0.10.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
+            Text("QuotaBar 0.11.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

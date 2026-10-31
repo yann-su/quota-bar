@@ -10,12 +10,14 @@
 		00433A9C2A27716FFB97A46F /* QuotaCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBE050B104286F4C643977B /* QuotaCore.framework */; };
 		106C2DB9EA06724127767984 /* TokenPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */; };
 		16C435E40A7873D6F078DA1A /* TokenUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD7A3E0502AB6B7F809D47D /* TokenUsage.swift */; };
+		255EC7F1EE2D8DADBB321574 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 15E7A9851FE2929B25A439C5 /* AppIcon.icns */; };
 		2D94A7EDCAC7A3D193847EA2 /* LocalTokenSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */; };
 		31E1AE8E44C02404A4679D3D /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AC34132AC97AAE5867E838 /* DashboardView.swift */; };
 		398C9DDDBB4BFB1EEDA70938 /* RepairClaude.command in Resources */ = {isa = PBXBuildFile; fileRef = 8A2194E8675609BE47A86C34 /* RepairClaude.command */; };
 		40051C5B7CF0C34215B0B5C7 /* QuotaBarWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E138A76EE03F9746E232875A /* QuotaBarWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4104ABD2E986B28517164E55 /* WidgetLargeContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF5B00D9A8385012A3F03F /* WidgetLargeContentView.swift */; };
 		52563DE19E63128AD88E5D26 /* WidgetLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726D5D052F61A2F18A1F179B /* WidgetLocalClient.swift */; };
+		662236746A1509A0EA82ED6A /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 15E7A9851FE2929B25A439C5 /* AppIcon.icns */; };
 		66241E92DAAD19676DE070E3 /* TokenDisplayValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C024D3518A89558D1715699C /* TokenDisplayValue.swift */; };
 		6BFF6CD295E6239854E22715 /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073A3A7F2E83DF1674CD91A1 /* UsageStore.swift */; };
 		6E9975AE8A1BAE3FCB9C1371 /* QuotaBarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53DDDC296625F2B3FB996B43 /* QuotaBarWidget.swift */; };
@@ -26,6 +28,7 @@
 		9B4549C5FB84A5E9672F057A /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
 		A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFCF7DB3383B67430BF7CD3 /* PanelLayout.swift */; };
 		A256D7E65990E1B238DFBC2E /* UsageClients.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A5C982DC3E0428F859D4C6 /* UsageClients.swift */; };
+		A41FBED4B58FD047016AB705 /* MenuBarTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = A8DAC0F2FD64ABA70F9ED939 /* MenuBarTemplate.pdf */; };
 		A711C6BB1C253DE0B2F9969A /* PricingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B3D112DCA823C2DC7B1236 /* PricingInfoView.swift */; };
 		AA2FB483DCBF9CBAD1FB1656 /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
 		B5A681C52731B865C1A78A69 /* WidgetLargeContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF5B00D9A8385012A3F03F /* WidgetLargeContentView.swift */; };
@@ -80,6 +83,7 @@
 /* Begin PBXFileReference section */
 		073A3A7F2E83DF1674CD91A1 /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		0D2B2FCA0A969B547F115E02 /* WidgetPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPublisher.swift; sourceTree = "<group>"; };
+		15E7A9851FE2929B25A439C5 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		2D0442239E23343A9E748460 /* TokenDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenDashboard.swift; sourceTree = "<group>"; };
 		340D75FE53988F42B67F78C3 /* QuotaBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotaBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		38A5C982DC3E0428F859D4C6 /* UsageClients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageClients.swift; sourceTree = "<group>"; };
@@ -98,6 +102,7 @@
 		8BBE050B104286F4C643977B /* QuotaCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotaCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTokenSources.swift; sourceTree = "<group>"; };
 		98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenLogReader.swift; sourceTree = "<group>"; };
+		A8DAC0F2FD64ABA70F9ED939 /* MenuBarTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = MenuBarTemplate.pdf; sourceTree = "<group>"; };
 		A91EF472A508D8ED0365DCA5 /* PanelHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelHostingView.swift; sourceTree = "<group>"; };
 		AC53B9F5CBE98D8DFAB2850C /* TokenTrend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenTrend.swift; sourceTree = "<group>"; };
 		AED391FA878436231BD3552A /* WidgetContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetContentView.swift; sourceTree = "<group>"; };
@@ -164,6 +169,8 @@
 		95733517431B0CA7FA4CE165 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				15E7A9851FE2929B25A439C5 /* AppIcon.icns */,
+				A8DAC0F2FD64ABA70F9ED939 /* MenuBarTemplate.pdf */,
 				8A2194E8675609BE47A86C34 /* RepairClaude.command */,
 			);
 			path = Resources;
@@ -254,6 +261,7 @@
 			buildConfigurationList = 5A29B5C8917579D70BC6BC83 /* Build configuration list for PBXNativeTarget "QuotaBarWidgets" */;
 			buildPhases = (
 				B6CF039E18482B7B936E4BCE /* Sources */,
+				7ED351C9024F20682456C8D6 /* Resources */,
 				78598974DD15DF138AFA9C24 /* Frameworks */,
 			);
 			buildRules = (
@@ -327,10 +335,20 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7ED351C9024F20682456C8D6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				662236746A1509A0EA82ED6A /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ABE9E2866FCE50FB15F87547 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				255EC7F1EE2D8DADBB321574 /* AppIcon.icns in Resources */,
+				A41FBED4B58FD047016AB705 /* MenuBarTemplate.pdf in Resources */,
 				398C9DDDBB4BFB1EEDA70938 /* RepairClaude.command in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

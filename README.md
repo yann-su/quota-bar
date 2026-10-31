@@ -1,6 +1,18 @@
 # QuotaBar
 
+<img src="Resources/AppIcon.png" width="96" alt="QuotaBar 应用图标">
+
 原生 macOS 菜单栏用量看板，显示 Claude / Codex 的具体 Token 数和订阅额度。Swift + SwiftUI + AppKit，macOS 14 或更高版本，无第三方依赖。
+
+## 下载安装
+
+[下载 Mac 安装包（DMG）](https://github.com/yann-su/quota-bar/releases/latest/download/QuotaBar-macOS-universal.dmg) · [下载 ZIP](https://github.com/yann-su/quota-bar/releases/latest/download/QuotaBar-macOS-universal.zip) · [所有版本](https://github.com/yann-su/quota-bar/releases)
+
+macOS 14 或更高版本，Intel 与 Apple Silicon 通用。打开 DMG，把 QuotaBar 拖入 Applications，再启动应用。无需 Xcode 或自行编译。仓库为私有，下载需要登录有访问权限的 GitHub 账号。
+
+当前包采用临时签名，尚未进行 Apple 公证；首次联网下载后，macOS 可能要求通过「系统设置 → 隐私与安全性 → 仍要打开」确认来源。保持菜单栏应用运行，再从桌面「编辑小组件」添加 QuotaBar。
+
+0.11.0：补充正式 macOS 应用图标和配套菜单栏矢量图标，标题栏同步新图标。GitHub Release 提供 DMG、ZIP 和 SHA-256 校验文件；可运行 `bash scripts/package-release.sh` 重新打包。
 
 0.10.0：新增大号与横向超大号原生小组件，今日、近 7 天、近 30 天均支持小／中／大／超大四种尺寸。大号在并排服务卡片中显示总 Token、输入／输出及各自 USD 参考费用，下方提供带刻度与图例的近 7 天双折线；超大号采用双栏布局，增加两家的 7 日峰值与日期。选定范围控制卡片合计；趋势和峰值始终明确标为近 7 天。
 

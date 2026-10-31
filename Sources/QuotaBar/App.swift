@@ -113,11 +113,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var pinned = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"), let icon = NSImage(contentsOf: url) {
+            NSApp.applicationIconImage = icon
+        }
         let demo = CommandLine.arguments.contains("--demo")
         store = UsageStore(demo: demo)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "gauge.with.dots.needle.50percent", accessibilityDescription: "QuotaBar 额度")
+            let image = Bundle.main.url(forResource: "MenuBarTemplate", withExtension: "pdf").flatMap(NSImage.init(contentsOf:))
+                ?? NSImage(systemSymbolName: "gauge.with.dots.needle.50percent", accessibilityDescription: "QuotaBar 额度")
+            image?.size = NSSize(width: 18, height: 18)
+            image?.isTemplate = true
+            button.setAccessibilityLabel("QuotaBar 用量")
+            button.image = image
             button.imagePosition = .imageLeading
             button.font = .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
             button.target = self
