@@ -1,0 +1,12 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+*.xcuserstate
+.env
+.env.*
+!.env.example
+*.log
+usage-history.json
+.credentials.json
+auth.json
