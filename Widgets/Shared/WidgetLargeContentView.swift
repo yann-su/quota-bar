@@ -46,7 +46,9 @@ struct WidgetLargeContentView: View {
                     }.frame(maxWidth: .infinity, maxHeight: .infinity)
                 }.frame(maxHeight: .infinity)
             } else {
-                providerGrid
+                VStack(spacing: 8) {
+                    ForEach(Provider.allCases) { provider in providerCard(provider) }
+                }
                 trend.frame(maxHeight: .infinity)
             }
             footer
@@ -54,7 +56,7 @@ struct WidgetLargeContentView: View {
     }
 
     private var providerGrid: some View {
-        HStack(alignment: .top, spacing: 10) {
+        VStack(spacing: 8) {
             ForEach(Provider.allCases) { provider in providerCard(provider) }
         }
     }
@@ -65,78 +67,66 @@ struct WidgetLargeContentView: View {
         let cost = currentDay ? item?.cost(for: period) : nil
         let split = currentDay ? item?.split(for: period) : nil
         let display = count.map(TokenDisplayValue.format)
-        return VStack(alignment: .leading, spacing: wide ? 7 : 5) {
-            HStack(spacing: 5) {
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Circle().fill(tint(provider)).frame(width: 6, height: 6)
-                Text(provider == .claude ? "Claude" : "Codex").fontWeight(.semibold)
-                Spacer(minLength: 0)
+                Text(provider == .claude ? "Claude" : "Codex")
+                    .font(.system(size: 13, weight: .semibold))
                 if item?.partial == true {
-                    Image(systemName: "exclamationmark.circle").foregroundStyle(.secondary)
-                        .accessibilityLabel("本机记录可能不完整")
+                    Image(systemName: "exclamationmark.circle").font(.system(size: 10))
+                        .foregroundStyle(.secondary)
                 }
-            }.font(.system(size: 12))
-
-            VStack(alignment: .leading, spacing: wide ? 3 : 1) {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(display?.number ?? "—")
-                        .font(.system(size: wide ? 30 : 27, weight: .semibold, design: .rounded))
-                        .monospacedDigit().minimumScaleFactor(0.7).lineLimit(1)
-                    if let display, !display.unit.isEmpty {
-                        Text(display.unit).font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
-                    }
+                Spacer(minLength: 4)
+                Text(display?.text ?? "—")
+                    .font(.system(size: wide ? 20 : 16, weight: .semibold, design: .rounded))
+                    .monospacedDigit().lineLimit(1)
+                if let cost {
+                    Text("\(cost.hasKnownCost && !cost.isComplete ? "部分 " : "")\(cost.referenceText)")
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.85)
                 }
-                if wide { Text("总 Token").font(.system(size: 9)).foregroundStyle(.secondary) }
-                Text(cost.map { "\($0.hasKnownCost && !$0.isComplete ? "部分 " : "")\($0.referenceText)" } ?? "—")
-                    .font(.system(size: wide ? 13 : 11, weight: .medium))
-                    .lineLimit(1).minimumScaleFactor(0.7)
-            }.fixedSize(horizontal: false, vertical: true)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("总计\(count.map { "\($0)个 Token" } ?? "待更新")，API参考\(cost?.referenceText ?? "未知")")
-
-            Divider().overlay(tint(provider).opacity(0.15))
-            directionRow(.input, split: split, cost: cost)
-            directionRow(.output, split: split, cost: cost)
-            Divider().opacity(0.4)
-            QuotaWindowsView(provider: provider, progresses: item?.quotaWindows ?? [], date: date, compact: true)
-            if wide { Spacer(minLength: 0) }
+            }.accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(provider == .claude ? "Claude" : "Codex")，总计\(count.map { "\($0)个 Token" } ?? "待更新")，API参考\(cost?.referenceText ?? "未知")\(item?.partial == true ? "，本机记录可能不完整" : "")")
+            if wide {
+                HStack(spacing: 12) {
+                    directionValue(.input, split: split, cost: cost)
+                    directionValue(.output, split: split, cost: cost)
+                }
+            }
+            QuotaWindowsView(provider: provider, progresses: item?.quotaWindows ?? [], date: date)
         }
-        .padding(wide ? 12 : 10)
-        .frame(maxWidth: .infinity, maxHeight: wide ? .infinity : nil, alignment: .topLeading)
+        .padding(wide ? 10 : 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(tint(provider).opacity(0.07), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(tint(provider).opacity(0.16), lineWidth: 0.5))
-        .fixedSize(horizontal: false, vertical: !wide)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func directionRow(_ direction: TokenDirection, split: WidgetTokenSplit?, cost: TokenCostEstimate?) -> some View {
-        let count = split?.tokens(for: direction)
-        return VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(direction == .input ? "输入" : "输出")
-                    .font(.system(size: 10)).foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-                Text(count.map { TokenDisplayValue.format($0).text } ?? "—")
-                    .font(.system(size: wide ? 14 : 12, weight: .semibold, design: .rounded))
-                    .monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-            }
+    private func directionValue(_ direction: TokenDirection, split: WidgetTokenSplit?, cost: TokenCostEstimate?) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                Text(direction == .input ? "输入" : "输出").foregroundStyle(.secondary)
+                Text(split.map { TokenDisplayValue.format($0.tokens(for: direction)).text } ?? "—").monospacedDigit()
+            }.font(.system(size: 12, weight: .medium)).lineLimit(1)
             if let cost {
                 Text("\(cost.hasKnownCost(for: direction) && !cost.isComplete(for: direction) ? "部分 " : "")\(cost.referenceText(for: direction))")
-                    .font(.system(size: 9)).foregroundStyle(.secondary)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
             }
-        }.accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(direction.title)\(count.map { "\($0)个 Token" } ?? "待更新")，参考折合\(cost?.referenceText(for: direction) ?? "未知")")
+        }.frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(direction.title)\(split.map { "\($0.tokens(for: direction))个 Token" } ?? "待更新")，参考折合\(cost?.referenceText(for: direction) ?? "未知")")
     }
 
     private var trend: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("每日总量 · 近 7 天").font(.system(size: 10, weight: .medium))
+                Text("每日总量 · 近 7 天").font(.system(size: 11, weight: .medium))
                 Spacer()
                 ForEach(Provider.allCases) { provider in
                     HStack(spacing: 3) {
                         Circle().fill(tint(provider)).frame(width: 4, height: 4)
                         Text(provider == .claude ? "Claude" : "Codex")
-                    }.font(.system(size: 8)).foregroundStyle(.secondary)
+                    }.font(.system(size: 9)).foregroundStyle(.secondary)
                 }
             }
             Chart {
@@ -156,7 +146,7 @@ struct WidgetLargeContentView: View {
                     AxisValueLabel(format: .dateTime.month(.twoDigits).day(.twoDigits), centered: false,
                                    anchor: value.index == 0 ? .topLeading : value.index == 2 ? .topTrailing : .top,
                                    collisionResolution: .disabled)
-                        .font(.system(size: 8))
+                        .font(.system(size: 9))
                 }
             }
             .chartYAxis {
@@ -164,7 +154,7 @@ struct WidgetLargeContentView: View {
                     AxisGridLine().foregroundStyle(.secondary.opacity(0.13))
                     AxisValueLabel {
                         if let count = value.as(Int64.self) {
-                            Text(TokenDisplayValue.format(count).text).font(.system(size: 8))
+                            Text(TokenDisplayValue.format(count).text).font(.system(size: 9))
                         }
                     }
                 }
@@ -207,6 +197,6 @@ struct WidgetLargeContentView: View {
                 else if outdated { Text("上次 \(snapshot.generatedAt.formatted(date: .omitted, time: .shortened))") }
                 else { Text(snapshot.generatedAt, style: .time) }
             }
-        }.font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1)
+        }.font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
     }
 }
