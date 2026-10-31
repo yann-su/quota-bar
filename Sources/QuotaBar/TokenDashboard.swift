@@ -5,6 +5,7 @@ struct TokenDashboard: View {
     @ObservedObject var store: UsageStore
     private var period: TokenPeriod { store.selectedTokenPeriod }
     @State private var showingTrends = CommandLine.arguments.contains("--show-trends")
+    @State private var showingPrices = false
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Picker("统计时间", selection: $store.selectedTokenPeriod) {
@@ -13,6 +14,10 @@ struct TokenDashboard: View {
             HStack {
                 Text("本机 Token · 含缓存").font(.system(size: 10, weight: .medium))
                 Spacer()
+                Button { showingPrices.toggle() } label: { Image(systemName: "dollarsign.circle") }
+                    .buttonStyle(.borderless).font(.system(size: 12)).help("查看 API 折合单价与计算说明")
+                    .accessibilityLabel("查看 API 折合单价和说明")
+                    .popover(isPresented: $showingPrices) { PricingInfoView(store: store) }
                 Button { showingTrends.toggle() } label: {
                     Label(showingTrends ? "概览" : "趋势", systemImage: showingTrends ? "square.grid.2x2" : "chart.xyaxis.line")
                 }.buttonStyle(.borderless).font(.system(size: 10))
@@ -24,6 +29,20 @@ struct TokenDashboard: View {
             }
             if let report = store.tokenReport {
                 if showingTrends {
+                    HStack {
+                        ForEach(Provider.allCases) { provider in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(provider.title).font(.system(size: 9)).foregroundStyle(.secondary)
+                                let coverage = report.coverage[provider] ?? TokenCoverage()
+                                if coverage.directoryFound && !(coverage.files == 0 && coverage.unreadableFiles > 0) {
+                                    TokenCostLabel(estimate: report.cost(provider: provider, period: period, now: store.now))
+                                } else {
+                                    Text("记录不可用").font(.system(size: 10)).foregroundStyle(.secondary)
+                                }
+                            }
+                            if provider == .claude { Spacer() }
+                        }
+                    }.padding(.horizontal, 3)
                     TokenTrendPanel(trend: report.trend(period: period, now: store.now), period: period, now: store.now,
                                     isPartial: report.coverage.values.contains { $0.isPartial })
                 }
@@ -39,7 +58,7 @@ struct TokenDashboard: View {
                 }.frame(maxWidth: .infinity).padding(.vertical, 40)
             }
             if !showingTrends {
-                Text("不含网页／手机用量，悬停查看精确值。")
+                Text("本机记录 · API 折合仅供参考，非订阅扣款。")
                 .font(.system(size: 9)).foregroundStyle(.secondary)
                 .help("总计 = 普通输入 + 输出 + 缓存读取 + 缓存写入。仅统计本机保存的记录，日期按 \(TimeZone.current.identifier) 划分。万／亿为四舍五入的显示值，导出 CSV 保留精确整数。")
             }
@@ -56,6 +75,7 @@ private struct TokenProviderCard: View {
     private var tint: Color { provider == .claude ? Color(red: 0.78, green: 0.43, blue: 0.29) : Color(red: 0.24, green: 0.52, blue: 0.43) }
     private var records: [TokenRecord] { report.filtered(provider: provider, period: period, now: now) }
     private var counts: TokenCounts { records.reduce(.zero) { $0 + $1.counts } }
+    private var cost: TokenCostEstimate { TokenCostEstimate.estimate(records) }
     private var coverage: TokenCoverage { report.coverage[provider] ?? TokenCoverage() }
     private var available: Bool { coverage.directoryFound && !(coverage.files == 0 && coverage.unreadableFiles > 0) }
     private var models: [(name: String, counts: TokenCounts)] {
@@ -69,7 +89,7 @@ private struct TokenProviderCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(provider == .claude ? "Claude Code" : "Codex")
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(tint)
-                    Text("总用量 · 含缓存").font(.system(size: 9)).foregroundStyle(.secondary)
+                    if available { TokenCostLabel(estimate: cost) }
                 }
                 Spacer(minLength: 8)
                 if available {
@@ -110,6 +130,9 @@ private struct TokenProviderCard: View {
                 Label("部分记录无法读取，统计可能不完整。", systemImage: "exclamationmark.circle")
                     .font(.system(size: 9)).foregroundStyle(.orange)
             }
+            if !cost.isComplete && available {
+                Text(cost.coverageText).font(.system(size: 9)).foregroundStyle(.orange)
+            }
         }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(tint.opacity(0.14)))
@@ -124,12 +147,16 @@ private struct TokenProviderCard: View {
                 Text("\(exact(counts.total)) tokens").monospacedDigit().textSelection(.enabled)
             }.font(.system(size: 10))
             ForEach(models, id: \.name) { model in
-                HStack {
-                    Text(model.name).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
-                    Spacer(minLength: 6)
-                    Text(TokenDisplayValue.format(model.counts.total).text).monospacedDigit()
-                        .help("\(exact(model.counts.total)) tokens")
-                }.font(.system(size: 10))
+                let estimate = TokenCostEstimate.estimate(records.filter { $0.model == model.name })
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(model.name).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                        Spacer(minLength: 6)
+                        Text(TokenDisplayValue.format(model.counts.total).text).monospacedDigit()
+                            .help("\(exact(model.counts.total)) tokens")
+                    }.font(.system(size: 10))
+                    TokenCostLabel(estimate: estimate)
+                }
             }
             HStack {
                 Text("\(coverage.files) 个本机日志")

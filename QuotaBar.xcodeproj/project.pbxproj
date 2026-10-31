@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		00433A9C2A27716FFB97A46F /* QuotaCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBE050B104286F4C643977B /* QuotaCore.framework */; };
 		09D51522611E1B77AEED5ECC /* WidgetSharedContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD15ACA867AA19951B47E7EF /* WidgetSharedContainer.swift */; };
+		106C2DB9EA06724127767984 /* TokenPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */; };
 		16C435E40A7873D6F078DA1A /* TokenUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD7A3E0502AB6B7F809D47D /* TokenUsage.swift */; };
 		2D94A7EDCAC7A3D193847EA2 /* LocalTokenSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */; };
 		31E1AE8E44C02404A4679D3D /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AC34132AC97AAE5867E838 /* DashboardView.swift */; };
@@ -25,6 +26,7 @@
 		9B4549C5FB84A5E9672F057A /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
 		A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFCF7DB3383B67430BF7CD3 /* PanelLayout.swift */; };
 		A256D7E65990E1B238DFBC2E /* UsageClients.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A5C982DC3E0428F859D4C6 /* UsageClients.swift */; };
+		A711C6BB1C253DE0B2F9969A /* PricingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B3D112DCA823C2DC7B1236 /* PricingInfoView.swift */; };
 		AA2FB483DCBF9CBAD1FB1656 /* WidgetContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED391FA878436231BD3552A /* WidgetContentView.swift */; };
 		B652F103D2D7F9D1EBAC089D /* TokenDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D0442239E23343A9E748460 /* TokenDashboard.swift */; };
 		CB4C2895C54318E71A3E9C79 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FF2BC8BF5C72FE5E25D27C /* WidgetSnapshot.swift */; };
@@ -85,6 +87,7 @@
 		62743CD95409A46538E88B6A /* Usage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Usage.swift; sourceTree = "<group>"; };
 		65AB3C320BE59FBC33517DAB /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		72A669B69F8574B9F46F44CC /* TokenTrendPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenTrendPanel.swift; sourceTree = "<group>"; };
+		83B3D112DCA823C2DC7B1236 /* PricingInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PricingInfoView.swift; sourceTree = "<group>"; };
 		8A2194E8675609BE47A86C34 /* RepairClaude.command */ = {isa = PBXFileReference; path = RepairClaude.command; sourceTree = "<group>"; };
 		8BBE050B104286F4C643977B /* QuotaCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = QuotaCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTokenSources.swift; sourceTree = "<group>"; };
@@ -95,6 +98,7 @@
 		AED391FA878436231BD3552A /* WidgetContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetContentView.swift; sourceTree = "<group>"; };
 		C024D3518A89558D1715699C /* TokenDisplayValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenDisplayValue.swift; sourceTree = "<group>"; };
 		D2FF2BC8BF5C72FE5E25D27C /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenPricing.swift; sourceTree = "<group>"; };
 		E138A76EE03F9746E232875A /* QuotaBarWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuotaBarWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -132,6 +136,7 @@
 			children = (
 				C024D3518A89558D1715699C /* TokenDisplayValue.swift */,
 				98D8B5F32C8A6911F7417359 /* TokenLogReader.swift */,
+				DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */,
 				AC53B9F5CBE98D8DFAB2850C /* TokenTrend.swift */,
 				3AD7A3E0502AB6B7F809D47D /* TokenUsage.swift */,
 				62743CD95409A46538E88B6A /* Usage.swift */,
@@ -202,6 +207,7 @@
 				93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */,
 				A91EF472A508D8ED0365DCA5 /* PanelHostingView.swift */,
 				3AFCF7DB3383B67430BF7CD3 /* PanelLayout.swift */,
+				83B3D112DCA823C2DC7B1236 /* PricingInfoView.swift */,
 				2D0442239E23343A9E748460 /* TokenDashboard.swift */,
 				72A669B69F8574B9F46F44CC /* TokenTrendPanel.swift */,
 				38A5C982DC3E0428F859D4C6 /* UsageClients.swift */,
@@ -344,6 +350,7 @@
 				2D94A7EDCAC7A3D193847EA2 /* LocalTokenSources.swift in Sources */,
 				E8D4A546C318083675B1FD86 /* PanelHostingView.swift in Sources */,
 				A1976C3CEC545DA0E398CB53 /* PanelLayout.swift in Sources */,
+				A711C6BB1C253DE0B2F9969A /* PricingInfoView.swift in Sources */,
 				B652F103D2D7F9D1EBAC089D /* TokenDashboard.swift in Sources */,
 				CBC3F00AC349C25FE91C9487 /* TokenTrendPanel.swift in Sources */,
 				A256D7E65990E1B238DFBC2E /* UsageClients.swift in Sources */,
@@ -360,6 +367,7 @@
 			files = (
 				66241E92DAAD19676DE070E3 /* TokenDisplayValue.swift in Sources */,
 				907EFA0E7DE19D66750F939D /* TokenLogReader.swift in Sources */,
+				106C2DB9EA06724127767984 /* TokenPricing.swift in Sources */,
 				7C848E4EA179831847A392E7 /* TokenTrend.swift in Sources */,
 				16C435E40A7873D6F078DA1A /* TokenUsage.swift in Sources */,
 				75C60993A8E03D24BCB62124 /* Usage.swift in Sources */,

@@ -19,7 +19,7 @@ struct WidgetContentView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: isSmall ? 9 : 10) {
+        VStack(alignment: .leading, spacing: isSmall ? 6 : 8) {
             HStack(spacing: 4) {
                 Image(systemName: "chart.xyaxis.line").foregroundStyle(.secondary)
                 Text("QuotaBar").fontWeight(.semibold)
@@ -39,7 +39,7 @@ struct WidgetContentView: View {
                 Spacer(minLength: 0)
             } else {
                 HStack(alignment: .center, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 7) {
                         ForEach(Provider.allCases) { provider in providerValue(provider) }
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     trend.frame(maxWidth: .infinity)
@@ -47,7 +47,7 @@ struct WidgetContentView: View {
             }
             HStack(spacing: 3) {
                 Circle().fill(outdated ? Color.orange : Color.secondary.opacity(0.6)).frame(width: 4, height: 4)
-                Text(isPreview ? "示例数据" : "本机 Token")
+                Text(isPreview ? "示例 · API 折合" : "本机 · API 折合")
                 Spacer(minLength: 2)
                 if let snapshot {
                     if !currentDay { Text("待更新") }
@@ -63,20 +63,26 @@ struct WidgetContentView: View {
         let value = snapshot?.providers.first { $0.provider == provider }
         let count = currentDay ? value?.total(for: period) : nil
         let display = count.map(TokenDisplayValue.format)
+        let cost = currentDay ? value?.cost(for: period) : nil
         return VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
                 Circle().fill(tint(provider)).frame(width: 5, height: 5)
                 Text(provider == .claude ? "Claude" : "Codex")
-                if value?.partial == true { Text("· 部分记录") }
+                if value?.partial == true { Image(systemName: "exclamationmark.circle") }
+                Spacer(minLength: 2)
+                if let cost {
+                    Text("\(cost.hasKnownCost && !cost.isComplete ? "部分 " : "")\(cost.referenceText)")
+                        .font(.system(size: 8)).lineLimit(1).minimumScaleFactor(0.6)
+                }
             }.font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(display?.number ?? "—").font(.system(size: isSmall ? 23 : 25, weight: .semibold, design: .rounded))
+                Text(display?.number ?? "—").font(.system(size: isSmall ? 21 : 23, weight: .semibold, design: .rounded))
                     .monospacedDigit().minimumScaleFactor(0.65).lineLimit(1)
                 if let display, !display.unit.isEmpty {
                     Text(display.unit).font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
                 }
             }
-        }.accessibilityLabel("\(provider.title)，\(period.title)，\(count.map { "\($0) 个 Token" } ?? "等待更新")")
+        }.accessibilityLabel("\(provider.title)，\(period.title)，\(count.map { "\($0) 个 Token" } ?? "等待更新")，API 参考折合 \(cost?.displayUSD ?? "未知")")
     }
 
     private var trend: some View {

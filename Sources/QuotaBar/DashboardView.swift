@@ -149,7 +149,7 @@ struct DashboardView: View {
                 }
             }
             if let message = store.settingsMessage { Text(message).font(.caption).foregroundStyle(.orange) }
-            Text("QuotaBar 0.5.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
+            Text("QuotaBar 0.6.0 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

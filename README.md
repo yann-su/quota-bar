@@ -2,13 +2,23 @@
 
 原生 macOS 菜单栏用量看板，显示 Claude / Codex 的具体 Token 数和订阅额度。Swift + SwiftUI + AppKit，macOS 14 或更高版本，无第三方依赖。
 
+0.6.0：新增 USD「API 参考折合」，在两家用量卡片、模型明细、趋势总览及小／中号组件中显示。金额与所选统计范围同步。输入、输出、缓存读取、缓存写入分别按模型单价计算；悬停查看金额构成，点击美元图标查看实际检测到的模型单价、核对日期和官方来源。52 项测试通过。
+
+折合使用 2026-10-31 核对的标准短上下文公开价表，将选定历史按当前表重估，用于衡量用量价值；不代表历史账单、订阅实付或账号余额，不含加速、长上下文溢价、工具费、税费或货币换算。价格表随源码版本更新，应用不后台抓取价格。
+
+Claude 缓存写入优先读取日志中 5 分钟／1 小时的分类，已知的 1 小时写入按对应费率计算；缺少时长时按 5 分钟写入折合并注明假设。Codex 未提供缓存写入时长时采用 30 分钟参考费率。缓存长时分类属于已有写入量的子集，不额外增加 Token；推理 Token 仍包含在输出中。
+
+只匹配已核对的模型 ID 或对应日期快照；内部模型、第三方模型及未知名称不猜价。部分记录无法定价时，显示「部分折合」及未定价 Token 数；全部未知时显示「未定价」，不显示为零费用。无本机日志的服务商不显示零金额。金额先用 Decimal 汇总，最后显示到美分；小于一美分显示 `< US$0.01`。原始 Token 和 Token CSV 保持精确整数。
+
+价格来源：[OpenAI 定价](https://developers.openai.com/api/docs/pricing)、[GPT-6 Sol](https://developers.openai.com/api/docs/models/compare?model=gpt-6-sol)、[GPT-5.4](https://developers.openai.com/api/docs/models/gpt-5.4)、[GPT-5.2](https://developers.openai.com/api/docs/models/gpt-5.2)、[GPT-5.1 Codex](https://developers.openai.com/api/docs/models/gpt-5.1-codex)、[Claude 定价](https://platform.claude.com/docs/en/about-claude/pricing)。
+
 0.5.0：增加原生 WidgetKit 桌面／通知中心小组件，包含小号用量卡片和中号用量＋近 7 天折线图。可在编辑小组件时选择今日、近 7 天或近 30 天；点击打开主应用的对应统计范围。新增 Xcode 工程与组件构建脚本，41 项测试通过。
 
 **当前本机验收边界：** 扩展已构建、注册并在系统 WidgetKit Simulator 中加载；小、中尺寸布局已渲染检查。主应用可写入摘要，但本机没有 Apple 开发者签名证书，系统实际拒绝临时签名扩展读取 App Group 文件。因此当前本地包只能预览布局，桌面真实数据显示尚需完成签名，不能视作已通过端到端验收。组件会明确显示签名／共享权限问题。
 
 ## macOS 小组件
 
-主应用每分钟扫描本机日志，向 App Group 原子写入摘要；只包含服务名、总 Token、每日数值、日期与可用额度百分比，不包含登录令牌、请求 ID、日志路径、模型名或对话内容。组件不扫描日志、不读取凭据、不请求服务商。主应用保持运行时定期请求组件重载；组件请求约 15 分钟后刷新，具体时间由 macOS 决定。跨天后旧的相对时间统计隐藏并提示待更新，过期摘要保留上次更新时间。
+主应用每分钟扫描本机日志，向 App Group 原子写入摘要；只包含服务名、总 Token、每日数值、API 折合摘要、日期与可用额度百分比，不包含登录令牌、请求 ID、日志路径、模型名或对话内容。组件不扫描日志、不读取凭据、不请求服务商。主应用保持运行时定期请求组件重载；组件请求约 15 分钟后刷新，具体时间由 macOS 决定。跨天后旧的相对时间统计隐藏并提示待更新，过期摘要保留上次更新时间。
 
 完成签名后，将包含扩展的应用移入「应用程序」并至少打开一次，再右键桌面 → 编辑小组件 → 搜索 QuotaBar。选择小号或中号添加；右键组件 → 编辑可切换统计范围。设置里的「同步统计摘要」可写入最新数据并请求重载。
 
@@ -118,6 +128,7 @@ swift test --disable-sandbox --build-system native --manifest-cache local
 dist/QuotaBar.app/Contents/MacOS/QuotaBar --check-tokens
 dist/QuotaBar.app/Contents/MacOS/QuotaBar --check-codex
 dist/QuotaBar.app/Contents/MacOS/QuotaBar --check-claude
+dist/QuotaBar.app/Contents/MacOS/QuotaBar --check-costs
 
 # 独立演示模式，不查询真实账号、不写入真实历史
 dist/QuotaBar.app/Contents/MacOS/QuotaBar --demo

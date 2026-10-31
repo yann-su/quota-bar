@@ -4,12 +4,40 @@ import Foundation
 /// decoded into the application model, persisted, logged or uploaded.
 public struct TokenLogParser {
     private struct Counters: Decodable {
+        struct CacheCreation: Decodable {
+            var ephemeral_5m_input_tokens: Int64?
+            var ephemeral_1h_input_tokens: Int64?
+        }
         var input_tokens: Int64?
         var output_tokens: Int64?
         var cache_read_input_tokens: Int64?
         var cache_creation_input_tokens: Int64?
         var cached_input_tokens: Int64?
         var cache_write_input_tokens: Int64?
+        var cache_creation: CacheCreation?
+        private enum CodingKeys: String, CodingKey {
+            case input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens
+            case cached_input_tokens, cache_write_input_tokens, cache_creation
+        }
+        init(from decoder: Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            input_tokens = try values.decodeIfPresent(Int64.self, forKey: .input_tokens)
+            output_tokens = try values.decodeIfPresent(Int64.self, forKey: .output_tokens)
+            cache_read_input_tokens = try values.decodeIfPresent(Int64.self, forKey: .cache_read_input_tokens)
+            cache_creation_input_tokens = try values.decodeIfPresent(Int64.self, forKey: .cache_creation_input_tokens)
+            cached_input_tokens = try values.decodeIfPresent(Int64.self, forKey: .cached_input_tokens)
+            cache_write_input_tokens = try values.decodeIfPresent(Int64.self, forKey: .cache_write_input_tokens)
+            // Optional pricing metadata must not discard valid parent usage.
+            cache_creation = try? values.decode(CacheCreation.self, forKey: .cache_creation)
+        }
+        var knownLongCacheWrites: Int64? {
+            guard let total = cache_creation_input_tokens, let creation = cache_creation else { return nil }
+            let short = creation.ephemeral_5m_input_tokens ?? 0
+            let long = creation.ephemeral_1h_input_tokens ?? 0
+            guard short >= 0, long >= 0, long <= total, short <= total - long,
+                  short + long == total else { return nil }
+            return long
+        }
         var normalizedClaude: TokenCounts? {
             counts(input: input_tokens ?? 0, output: output_tokens ?? 0,
                    read: cache_read_input_tokens ?? 0, write: cache_creation_input_tokens ?? 0)
@@ -63,7 +91,8 @@ public struct TokenLogParser {
                 malformedUsageRows += 1; return nil
             }
             let key = "claude:\(id):\(row.requestId ?? "")"
-            return TokenRecord(id: key, provider: provider, timestamp: time, model: row.message?.model ?? "未知模型", counts: counts)
+            return TokenRecord(id: key, provider: provider, timestamp: time, model: row.message?.model ?? "未知模型", counts: counts,
+                longCacheWriteTokens: usage.knownLongCacheWrites)
         }
         guard ["\"token_count\"", "\"session_meta\"", "\"turn_context\""].contains(where: { line.range(of: Data($0.utf8)) != nil }) else { return nil }
         guard let row = try? decoder.decode(CodexRow.self, from: line) else { malformedUsageRows += 1; return nil }

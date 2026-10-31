@@ -41,8 +41,26 @@ enum QuotaBarMain {
                 let published = WidgetPublisher().publish(report: report, quotas: []) && WidgetSharedContainer.read() != nil
                 print("Host widget summary: \(published ? "written and read back" : "unavailable; check App Group and signing")")
                 print("This checks host access only. Verify extension access in WidgetKit Simulator or on the desktop.")
-                print("Payload: aggregate token counts and dates only; no credentials or conversations.")
+                print("Payload: aggregate token counts, reference USD and dates; no credentials or conversations.")
                 exit(published ? 0 : 1)
+            }
+            dispatchMain()
+        }
+        if CommandLine.arguments.contains("--check-costs") {
+            Task {
+                let report = await LocalTokenScanner(roots: LocalTokenSources.roots).scan()
+                print("API reference only; USD; Standard / short context; price table \(TokenPriceCatalog.verifiedDate).")
+                for provider in Provider.allCases {
+                    for period in TokenPeriod.allCases {
+                        let cost = report.cost(provider: provider, period: period, now: report.scannedAt)
+                        print("\(provider.title) \(period.title): \(cost.displayUSD); priced=\(cost.pricedTokens); unpriced=\(cost.unpricedTokens); assumedCacheTTL=\(cost.assumedCacheLifetime)")
+                    }
+                    let models = Set(report.records.filter { $0.provider == provider }.map(\.model)).sorted()
+                    for model in models {
+                        print("\(provider.title) model=\(model); priced=\(TokenPriceCatalog.price(provider: provider, model: model) != nil)")
+                    }
+                }
+                exit(0)
             }
             dispatchMain()
         }

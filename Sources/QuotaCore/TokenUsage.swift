@@ -36,13 +36,23 @@ public struct TokenRecord: Equatable, Sendable {
     public var timestamp: Date
     public var model: String
     public var counts: TokenCounts
-    public init(id: String, provider: Provider, timestamp: Date, model: String, counts: TokenCounts) {
+    /// Known long-lived cache writes (Claude 1h). Nil means the lifetime was
+    /// not present in the local metadata. This is a subset, never extra tokens.
+    public var longCacheWriteTokens: Int64?
+    public init(id: String, provider: Provider, timestamp: Date, model: String, counts: TokenCounts, longCacheWriteTokens: Int64? = nil) {
         self.id = id; self.provider = provider; self.timestamp = timestamp; self.model = model; self.counts = counts
+        self.longCacheWriteTokens = longCacheWriteTokens
     }
     public mutating func merge(_ other: Self) {
         // Claude writes multiple content blocks for one API response. Preserve
         // the final counters once, even when blocks occur in copied transcripts.
+        let oldWrite = counts.cacheWrite
         counts = counts.mergedMaximum(other.counts)
+        if other.counts.cacheWrite > oldWrite {
+            longCacheWriteTokens = other.longCacheWriteTokens
+        } else if other.counts.cacheWrite == oldWrite, let value = other.longCacheWriteTokens {
+            longCacheWriteTokens = min(counts.cacheWrite, max(longCacheWriteTokens ?? 0, value))
+        }
         if other.timestamp.timeIntervalSince(timestamp) < 0 { timestamp = other.timestamp }
     }
 }

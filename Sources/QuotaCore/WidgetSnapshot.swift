@@ -26,6 +26,9 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
     public var quotaFetchedAt: Date?
     public var quotaResetsAt: Date?
     public var partial: Bool
+    public var todayCost: TokenCostEstimate?
+    public var sevenDaysCost: TokenCostEstimate?
+    public var thirtyDaysCost: TokenCostEstimate?
     public func total(for period: WidgetPeriod) -> Int64? {
         switch period { case .today: return today; case .sevenDays: return sevenDays; case .thirtyDays: return thirtyDays }
     }
@@ -34,17 +37,21 @@ public struct WidgetProviderSnapshot: Codable, Equatable, Sendable {
               quotaResetsAt.map({ $0.timeIntervalSince(now) > 0 }) ?? true else { return nil }
         return remainingPercent
     }
+    public func cost(for period: WidgetPeriod) -> TokenCostEstimate? {
+        switch period { case .today: return todayCost; case .sevenDays: return sevenDaysCost; case .thirtyDays: return thirtyDaysCost }
+    }
 }
 
 /// This is the complete cross-process payload: no credentials, request IDs,
 /// model names, file paths or conversation content are included.
 public struct WidgetSnapshot: Codable, Equatable, Sendable {
-    public static let currentVersion = 1
+    public static let currentVersion = 2
     public var version = currentVersion
     public var generatedAt: Date
     public var dayStart: Date
     public var timeZoneIdentifier: String
     public var providers: [WidgetProviderSnapshot]
+    public var priceDate = TokenPriceCatalog.verifiedDate
 
     public init(report: TokenReport, quotas: [UsageSnapshot] = [], now: Date = Date(), calendar: Calendar = .current) {
         generatedAt = now
@@ -57,11 +64,15 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
             func total(_ period: TokenPeriod) -> Int64? {
                 available ? report.totals(provider: provider, period: period, now: now, calendar: calendar).total : nil
             }
+            func cost(_ period: TokenPeriod) -> TokenCostEstimate? {
+                available ? report.cost(provider: provider, period: period, now: now, calendar: calendar) : nil
+            }
             let quota = quotas.first { $0.provider == provider }
             return WidgetProviderSnapshot(provider: provider, today: total(.today), sevenDays: total(.sevenDays),
                 thirtyDays: total(.thirtyDays), daily: available ? trend.buckets.map { WidgetDaySample(date: $0.start, tokens: $0.counts(for: provider).total) } : [],
                 remainingPercent: quota?.availablePercent(at: now, maxAge: 15 * 60), quotaFetchedAt: quota?.fetchedAt,
-                quotaResetsAt: quota?.windows.compactMap(\.resetsAt).min(), partial: coverage.isPartial)
+                quotaResetsAt: quota?.windows.compactMap(\.resetsAt).min(), partial: coverage.isPartial,
+                todayCost: cost(.today), sevenDaysCost: cost(.sevenDays), thirtyDaysCost: cost(.thirtyDays))
         }
     }
     public func matchesCurrentDay(at now: Date, calendar: Calendar = .current) -> Bool {
