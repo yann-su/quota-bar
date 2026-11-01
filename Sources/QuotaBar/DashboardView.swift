@@ -109,11 +109,15 @@ struct DashboardView: View {
             Divider()
             VStack(alignment: .leading, spacing: 8) {
                 Text("Claude 连接").font(.system(size: 12, weight: .semibold))
-                Text("复用 Claude Code 的订阅登录。首次连接可能请求钥匙串权限。仅安装 Claude 桌面版时，请先安装 Claude Code 并登录。")
+                Text("复用 Claude Code 的订阅登录，后台不弹授权框。手动连接可能请求钥匙串权限；取消后暂停读取。仅安装 Claude 桌面版时，请先安装 Claude Code 并登录。")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                 Button(store.claudeEnabled ? "暂停 Claude 额度查询" : "连接 Claude") {
                     if store.claudeEnabled { store.disconnectClaude() } else { store.connectClaude() }
                 }.disabled(store.isDemo)
+                if store.claudeEnabled && store.state(.claude).requiresManualConnection {
+                    Button("连接 Claude") { store.connectClaude() }
+                        .disabled(store.isDemo || store.state(.claude).isRefreshing)
+                }
                 Button("修复 Claude 登录…") { store.repairClaudeLogin() }.disabled(store.isDemo)
             }
             VStack(alignment: .leading, spacing: 8) {
@@ -146,7 +150,7 @@ struct DashboardView: View {
                 }
             }
             if let message = store.settingsMessage { Text(message).font(.caption).foregroundStyle(.orange) }
-            Text("QuotaBar 0.13.1 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
+            Text("QuotaBar 0.13.2 · macOS 原生").font(.system(size: 10)).foregroundStyle(.tertiary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -218,6 +222,11 @@ private struct ProviderCard: View {
             if provider == .claude, state.failure == .expiredCredential || state.failure == .missingCredential {
                 Button("修复 Claude 登录…") { store.repairClaudeLogin() }
                     .buttonStyle(.bordered).controlSize(.small)
+            }
+            if provider == .claude, state.snapshot != nil, state.requiresManualConnection {
+                Button("连接 Claude") { store.connectClaude() }
+                    .buttonStyle(.bordered).controlSize(.small)
+                    .disabled(state.isRefreshing || store.isDemo)
             }
             if let retry = state.retryAfter, retry.timeIntervalSince(store.now) > 0 {
                 Text("自动重试不早于 \(retry.formatted(date: .omitted, time: .standard))")

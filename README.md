@@ -12,6 +12,8 @@ macOS 14 或更高版本，Intel 与 Apple Silicon 通用。打开 DMG，把 Quo
 
 当前包采用临时签名，尚未进行 Apple 公证；首次联网下载后，macOS 可能要求通过「系统设置 → 隐私与安全性 → 仍要打开」确认来源。保持菜单栏应用运行，再从桌面「编辑小组件」添加 QuotaBar。
 
+0.13.2：修复 Claude 额度刷新反复请求钥匙串密码。授权后的凭据仅在当前进程内存中复用；取消或拒绝授权后暂停自动读取，手动连接才允许授权。后台读取同时约束现代 LAContext 和 macOS 文件钥匙串的交互策略，短暂禁用交互后立即恢复，无法禁止时不发起读取。服务端 401 后最多静默重读一次，不重复发送已被拒绝的凭据；暂停 Claude 时清除内存缓存。83 项测试通过，不复制凭据到新的文件或钥匙串项目。
+
 0.13.1：提高折线图可读性。主界面和原生组件统一使用高对比度配色、Claude 实线圆点与 Codex 虚线菱形，增加最新点标记，刻度放大并移除无意义的小数零。主界面图表增高，图例明确显示当前或悬停时段的用量，精确整数保留在悬停提示；大号与超大号直接显示两家今日累计值，避免把区间合计误读为单日用量。保留零起点、真实数据与原有统计范围。
 
 0.13.0：重新设计额度区以提高可读性。剩余百分比固定为 20 点加粗，窗口标签 12 点，进度条加高至 6 点。大号与超大号将 Claude、Codex 改为上下排列的宽卡片，5 小时与每周额度不再挤进窄列；大号保留 Token 总量、参考费用与趋势，超大号另保留输入／输出与各自费用。主界面同步放大，保留双窗口独立过期处理，72 项数据测试通过。
@@ -108,7 +110,7 @@ Claude 流式日志按 message ID + request ID 去重并取最终计数，Codex 
 原生小组件安装版位于 `~/Applications/QuotaBar.app`，双击即可启动。`bash scripts/build-app.sh` 仍可单独构建不带扩展的菜单栏版本。菜单栏出现仪表图标，点击查看额度；右键可以刷新或退出。可将应用拖入「应用程序」后在设置中开启登录启动。
 
 - **Codex**：自动发现本机 Codex CLI 并复用登录。找不到时，在设置里指定可执行文件路径。先在终端执行 `codex login` 完成订阅账号登录。
-- **Claude**：点击「连接 Claude」，复用 Claude Code 的登录状态。macOS 可能请求读取「Claude Code-credentials」钥匙串项目；允许后才能查询。若登录需要更新，点击「修复 Claude 登录…」，等待官方 CLI 的 `/usage` 面板出现，再回到 QuotaBar 刷新；只有 CLI 自己也无法续期时才需要 `/login`。首次可能提示信任应用自身的 Resources 目录，它只包含此应用的登录修复脚本。仅登录 Claude 桌面版还不够，需要 Claude Code 的订阅登录。
+- **Claude**：点击「连接 Claude」，复用 Claude Code 的登录状态。仅手动连接可能请求读取「Claude Code-credentials」钥匙串项目；取消后暂停自动读取，不会后台反复弹密码框。重启或更新应用后若旧授权不适用，显示连接提示并等待手动操作。若登录需要更新，点击「修复 Claude 登录…」，等待官方 CLI 的 `/usage` 面板出现，再回到 QuotaBar 刷新；只有 CLI 自己也无法续期时才需要 `/login`。首次可能提示信任应用自身的 Resources 目录，它只包含此应用的登录修复脚本。仅登录 Claude 桌面版还不够，需要 Claude Code 的订阅登录。
 - **API key 账号**：当前版本显示订阅额度，不计算 API 账单或 token 花费。
 
 本机验证：Codex 查询成功；Claude 由官方 CLI 自动续期后查询成功，返回五小时及每周两个额度窗口。
@@ -134,7 +136,7 @@ Claude 使用本机 Claude Code 登录，通过 `https://api.anthropic.com/api/o
 
 Claude 官方说明：[订阅用量窗口](https://support.claude.com/en/articles/11647753-how-do-usage-and-length-limits-work)、[Claude Code 凭据存储](https://code.claude.com/docs/en/authentication#credential-management)。Claude 各产品的订阅额度共用。
 
-QuotaBar 只在内存中使用 Claude access token，固定向 Anthropic 发请求，拒绝 HTTP 重定向；不复制 Claude 的凭据、不读取浏览器 Cookie、不提取对话正文。「修复 Claude 登录」打开官方 CLI，由 CLI 自己处理凭据续期，不发起模型对话。后台查询不会主动弹钥匙串授权，首次授权由「连接 Claude」触发。
+QuotaBar 只在当前进程内存中复用 Claude access token，固定向 Anthropic 发请求，拒绝 HTTP 重定向；不持久化凭据副本、不修改钥匙串 ACL、不读取浏览器 Cookie、不提取对话正文。「修复 Claude 登录」打开官方 CLI，由 CLI 自己处理凭据续期，不发起模型对话。后台查询不允许钥匙串授权 UI；LAContext 用于现代钥匙串，文件钥匙串另在串行、同步的短作用域内保存交互状态、关闭 UI、读取后恢复。这个已弃用的兼容 API 只用于读取 Claude Code 既有的文件钥匙串项目，不将其迁移到新钥匙串。若无法关闭 UI，直接报告需要手动连接。取消授权后自动刷新暂停；普通「刷新」不会重新发起授权，需点击「连接 Claude」。临时签名的代码身份会随构建改变，更新后可能需要重新手动授权，不能承诺跨版本保留授权。
 
 0.1.1 修复：以服务端 401 判定登录失效，不因本地到期时间直接阻断查询；过期钥匙串记录不会遮蔽更新的 fallback 文件；手动连接可以绕过普通失败退避，仍遵守服务端 429 的等待时间。
 

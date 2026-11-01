@@ -10,6 +10,7 @@ struct ProviderState {
     var isRefreshing = false
     var retryAfter: Date?
     var failure: UsageError?
+    var requiresManualConnection: Bool { failure == .keychainDenied }
 
     func mustWaitBeforeRetry(at now: Date, forced: Bool) -> Bool {
         guard let retryAfter, retryAfter.timeIntervalSince(now) > 0 else { return false }
@@ -141,10 +142,12 @@ final class UsageStore: ObservableObject {
     func disconnectClaude() {
         claudeEnabled = false
         states[.claude]?.error = "已暂停读取。点击连接可恢复。"
+        Task { await ClaudeClient.credentials.clear() }
     }
 
     func refresh(_ provider: Provider, force: Bool = false, allowPrompt: Bool = false) {
         guard !isDemo, !state(provider).isRefreshing else { return }
+        if provider == .claude, state(provider).requiresManualConnection, !allowPrompt { return }
         let current = Date()
         if state(provider).mustWaitBeforeRetry(at: current, forced: force) { return }
         let elapsed = current.timeIntervalSince(lastAttempts[provider] ?? .distantPast)
@@ -172,11 +175,13 @@ final class UsageStore: ObservableObject {
                 publishWidget()
             } catch {
                 states[provider, default: ProviderState()].isRefreshing = false
+                if provider == .claude && !claudeEnabled { return }
                 states[provider]?.error = (error as? UsageError)?.localizedDescription ?? "无法读取额度，请稍后重试。"
                 states[provider]?.failure = error as? UsageError
                 let count = min(6, (failures[provider] ?? 0) + 1)
                 failures[provider] = count
-                if case UsageError.rateLimited(let date) = error { states[provider]?.retryAfter = date }
+                if error as? UsageError == .keychainDenied { states[provider]?.retryAfter = nil }
+                else if case UsageError.rateLimited(let date) = error { states[provider]?.retryAfter = date }
                 else { states[provider]?.retryAfter = Date().addingTimeInterval(min(900, 15 * pow(2, Double(count - 1)))) }
             }
         }

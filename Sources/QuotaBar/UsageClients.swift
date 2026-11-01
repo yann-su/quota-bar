@@ -86,11 +86,20 @@ final class CodexRPC {
     }
 }
 
-struct ClaudeCredential {
+struct ClaudeCredential: Sendable {
     let accessToken: String
     let expiresAt: Date?
+    private static let keychainLock = NSLock()
 
-    static func read(allowPrompt: Bool) throws -> Self {
+    static func read(allowPrompt: Bool, excludingToken: String? = nil) throws -> Self {
+        // Use Claude Code's existing fallback when current, without touching its
+        // keychain item. Never create, update, or renew another app's credentials.
+        let directory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude")
+        let fileData = try? Data(contentsOf: directory.appendingPathComponent(".credentials.json"))
+        if let credential = select(keychainData: nil, fileData: fileData, excludingToken: excludingToken),
+           credential.expiresAt.map({ $0.timeIntervalSinceNow > 0 }) ?? true { return credential }
+        keychainLock.lock()
+        defer { keychainLock.unlock() }
         let context = LAContext()
         context.interactionNotAllowed = !allowPrompt
         let query: [String: Any] = [
@@ -101,22 +110,21 @@ struct ClaudeCredential {
             kSecUseAuthenticationContext as String: context
         ]
         var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        // Claude Code's documented fallback. Do not write or renew its credentials.
-        let directory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude")
+        let status = try KeychainInteractionGate.system.read(allowPrompt: allowPrompt) {
+            SecItemCopyMatching(query as CFDictionary, &item)
+        }
         let keychainData = status == errSecSuccess ? item as? Data : nil
-        let fileData = try? Data(contentsOf: directory.appendingPathComponent(".credentials.json"))
-        if let credential = select(keychainData: keychainData, fileData: fileData) { return credential }
-        if status == errSecInteractionNotAllowed || status == errSecAuthFailed || status == errSecUserCanceled {
+        if let credential = select(keychainData: keychainData, fileData: fileData, excludingToken: excludingToken) { return credential }
+        if status == errSecInteractionNotAllowed || status == errSecInteractionRequired || status == errSecAuthFailed || status == errSecUserCanceled {
             throw UsageError.keychainDenied
         }
         throw UsageError.missingCredential
     }
 
-    static func select(keychainData: Data?, fileData: Data?, now: Date = Date()) -> Self? {
+    static func select(keychainData: Data?, fileData: Data?, excludingToken: String? = nil, now: Date = Date()) -> Self? {
         let candidates = [keychainData, fileData].compactMap { data -> Self? in
             guard let data else { return nil }; return try? decode(data)
-        }
+        }.filter { $0.accessToken != excludingToken }
         // A stale Keychain entry must not mask Claude Code's newer fallback file.
         return candidates.first { $0.expiresAt.map { $0.timeIntervalSince(now) > 0 } ?? false }
             ?? candidates.first { $0.expiresAt == nil }
@@ -144,8 +152,27 @@ final class NoRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sen
 }
 
 enum ClaudeClient {
+    static let credentials = ClaudeCredentialSession()
+
     static func fetch(allowPrompt: Bool, diagnostics: ((String) -> Void)? = nil) async throws -> UsageSnapshot {
-        let credential = try await Task.detached { try ClaudeCredential.read(allowPrompt: allowPrompt) }.value
+        let credential = try await credentials.credential(allowPrompt: allowPrompt)
+        do { return try await fetch(credential: credential, diagnostics: diagnostics) }
+        catch UsageError.expiredCredential {
+            await credentials.invalidate(rejected: credential)
+            // Claude Code may have renewed its login. Try once without allowing
+            // another dialog, and never retry the same server-rejected token.
+            let renewed: ClaudeCredential
+            do { renewed = try await credentials.credential(allowPrompt: false) }
+            catch { throw UsageError.expiredCredential }
+            do { return try await fetch(credential: renewed, diagnostics: diagnostics) }
+            catch {
+                if error as? UsageError == .expiredCredential { await credentials.invalidate(rejected: renewed) }
+                throw error
+            }
+        }
+    }
+
+    private static func fetch(credential: ClaudeCredential, diagnostics: ((String) -> Void)?) async throws -> UsageSnapshot {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 20
         config.timeoutIntervalForResource = 25

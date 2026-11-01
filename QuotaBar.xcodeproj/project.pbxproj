@@ -41,6 +41,7 @@
 		CBC3F00AC349C25FE91C9487 /* TokenTrendPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A669B69F8574B9F46F44CC /* TokenTrendPanel.swift */; };
 		D3F35C567E0E0A1356E60EE8 /* QuotaWindowsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE558ABF0D0B0A8D5AE05E6 /* QuotaWindowsView.swift */; };
 		D6C59A15B6873A8C78578485 /* QuotaCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BBE050B104286F4C643977B /* QuotaCore.framework */; };
+		D937DEE531039448540770F3 /* ClaudeCredentialSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB8E53C20B4130E57268F66 /* ClaudeCredentialSession.swift */; };
 		E10819957D9E06C03E1C352B /* WidgetLocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726D5D052F61A2F18A1F179B /* WidgetLocalClient.swift */; };
 		E645F3FE3209DCE7D487ADE9 /* WidgetPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2B2FCA0A969B547F115E02 /* WidgetPublisher.swift */; };
 		E8D4A546C318083675B1FD86 /* PanelHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91EF472A508D8ED0365DCA5 /* PanelHostingView.swift */; };
@@ -116,6 +117,7 @@
 		C024D3518A89558D1715699C /* TokenDisplayValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenDisplayValue.swift; sourceTree = "<group>"; };
 		D2FF2BC8BF5C72FE5E25D27C /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		DC76B54EEDE5C6A23C6FBA6A /* TokenPricing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenPricing.swift; sourceTree = "<group>"; };
+		DCB8E53C20B4130E57268F66 /* ClaudeCredentialSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCredentialSession.swift; sourceTree = "<group>"; };
 		E138A76EE03F9746E232875A /* QuotaBarWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuotaBarWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDB90B9B19000AA97460F864 /* TokenChartStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenChartStyle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -227,6 +229,7 @@
 			isa = PBXGroup;
 			children = (
 				65AB3C320BE59FBC33517DAB /* App.swift */,
+				DCB8E53C20B4130E57268F66 /* ClaudeCredentialSession.swift */,
 				47AC34132AC97AAE5867E838 /* DashboardView.swift */,
 				93BD8FA54665F0DA00568A4F /* LocalTokenSources.swift */,
 				A91EF472A508D8ED0365DCA5 /* PanelHostingView.swift */,
@@ -385,6 +388,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9471AC18898C33BC449B22E1 /* App.swift in Sources */,
+				D937DEE531039448540770F3 /* ClaudeCredentialSession.swift in Sources */,
 				31E1AE8E44C02404A4679D3D /* DashboardView.swift in Sources */,
 				2D94A7EDCAC7A3D193847EA2 /* LocalTokenSources.swift in Sources */,
 				E8D4A546C318083675B1FD86 /* PanelHostingView.swift in Sources */,

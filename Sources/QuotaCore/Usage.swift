@@ -55,7 +55,7 @@ public enum UsageError: Error, LocalizedError, Equatable {
         switch self {
         case .missingCLI: return "未找到 Codex CLI。安装并登录后再刷新，或在设置中指定路径。"
         case .notSignedIn: return "请先在终端运行 codex login，再刷新额度。"
-        case .keychainDenied: return "未能读取 Claude 登录凭据。请点击连接并允许钥匙串访问。"
+        case .keychainDenied: return "Claude 需要授权，已暂停后台读取。请手动点击「连接 Claude」；取消后不会自动再弹窗。"
         case .expiredCredential: return "Claude 登录需要更新。点击「修复 Claude 登录」让官方客户端续期，再回到这里刷新。"
         case .missingCredential: return "未找到 Claude Code 订阅登录。请先运行 claude 并登录。"
         case .invalidResponse: return "暂时无法解析额度响应，请刷新或更新 QuotaBar。"
